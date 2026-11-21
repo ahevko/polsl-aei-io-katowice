@@ -1,21 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useAuth } from './auth/AuthContext'
+import { LoginPage } from './pages/LoginPage'
 
-// Pierwsza wersja – sprawdzamy tylko, czy frontend dogada się z backendem
-// (Vite przekierowuje /api na http://localhost:8080, patrz vite.config.ts).
 export function App() {
-  const [status, setStatus] = useState('Łączenie z serwerem…')
+  const { user, ready, logout } = useAuth()
 
-  useEffect(() => {
-    fetch('/api/ping')
-      .then((r) => r.json())
-      .then((d: { message: string }) => setStatus(`Serwer odpowiada: ${d.message}`))
-      .catch(() => setStatus('Brak połączenia z serwerem – czy backend działa na :8080?'))
-  }, [])
+  if (!ready) return <div className="loading">Ładowanie…</div>
+  if (!user) return <LoginPage />
 
+  // TODO: lista subskrypcji (#14)
   return (
     <main className="container">
-      <h1>Monitor subskrypcji</h1>
-      <p>{status}</p>
+      <div className="card">
+        <h1>Cześć, {user.email}!</h1>
+        <p className="muted">Logowanie działa, lista subskrypcji w drodze.</p>
+        <button onClick={logout}>Wyloguj</button>
+      </div>
     </main>
   )
 }
