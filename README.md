@@ -28,3 +28,7 @@ Dokumentacja etapów oddawana jest na PZE.
 cd backend
 go run ./cmd/server
 ```
+## Diagramy
+
+[Diagram klas domeny](diagrams/out/02_model_domenowy.png) · [Źródło PlantUML]
+(diagrams/02_model_domenowy.puml)

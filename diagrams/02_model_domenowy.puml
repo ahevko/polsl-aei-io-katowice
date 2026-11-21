@@ -1,0 +1,141 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "internal/domain  (Warstwa logiki biznesowej – model dziedzinowy)" #FFFFFF {
+  class "User" as User {
+    +ID: string
+    +Email: string
+    +PasswordHash: string
+    +BaseCurrency: Currency
+    +Role: Role
+    +CreatedAt: time.Time
+    +{static} NewUser(email, passwordHash: string, now: time.Time): (*User, error)
+    +{static} ValidateEmail(email: string): error
+    +{static} ValidatePassword(pw: string): error
+    +ChangeBaseCurrency(c: Currency): error
+  }
+  enum "Role" as Role {
+    USER
+    ADMIN
+  }
+  enum "Currency" as Currency {
+    PLN
+    EUR
+    USD
+  }
+  class "Money" as Money <<value object>> {
+    +Minor: int64
+    +Currency: Currency
+    +{static} NewMoney(amount: float64, c: Currency): (Money, error)
+    +Amount(): float64
+    +Add(o: Money): (Money, error)
+    +MulRatio(num, den: int64): Money
+    +String(): string
+  }
+  class "Subscription" as Subscription <<entity>> {
+    +ID: string
+    +UserID: string
+    +Name: string
+    +Price: Money
+    +Cycle: BillingCycle
+    +NextPaymentDate: time.Time
+    +CategoryIDs: []string
+    +Status: SubscriptionStatus
+    +CreatedAt: time.Time
+    +{static} NewSubscription(userID, name, price, cycle, next, categoryIDs, now): (*Subscription, error)
+    +Validate(): error
+    +IsActive(): bool
+    +Pause(): error
+    +Resume(next: time.Time): error
+    +IsDue(day: time.Time): bool
+    +AdvanceBillingDate(): error
+    +RollForwardTo(day: time.Time): error
+    +MonthlyCost(): (Money, error)
+    +YearlyCost(): (Money, error)
+  }
+  enum "SubscriptionStatus" as SubscriptionStatus {
+    ACTIVE
+    PAUSED
+  }
+  enum "BillingCycle" as BillingCycle {
+    WEEKLY
+    MONTHLY
+    YEARLY
+  }
+  interface "CycleStrategy" as CycleStrategy <<interface, Strategia>> {
+    +Next(from: time.Time): time.Time
+    +PaymentsPerYear(): int64
+  }
+  class "WeeklyCycle" as WeeklyCycle {
+    +Next(from: time.Time): time.Time
+    +PaymentsPerYear(): int64
+  }
+  class "MonthlyCycle" as MonthlyCycle {
+    +Next(from: time.Time): time.Time
+    +PaymentsPerYear(): int64
+  }
+  class "YearlyCycle" as YearlyCycle {
+    +Next(from: time.Time): time.Time
+    +PaymentsPerYear(): int64
+  }
+  class "billing_cycle.go" as billing_cycle <<utility, Fabryka>> {
+    +{static} StrategyFor(c: BillingCycle): (CycleStrategy, error)
+    +{static} ParseBillingCycle(s: string): (BillingCycle, error)
+    +{static} DateOnly(t: time.Time): time.Time
+    -{static} addMonthsClamped(t: time.Time, months: int): time.Time
+  }
+  class "Category" as Category <<entity>> {
+    +ID: string
+    +Name: string
+    +IsDefault: bool
+    +{static} DefaultCategories(): []Category
+  }
+  class "Payment" as Payment <<entity>> {
+    +ID: string
+    +UserID: string
+    +SubscriptionID: string
+    +SubscriptionName: string
+    +Date: time.Time
+    +Amount: Money
+    +CreatedAt: time.Time
+    +{static} NewPayment(s: *Subscription, now: time.Time): *Payment
+  }
+  class "Notification" as Notification <<entity>> {
+    +ID: string
+    +UserID: string
+    +SubscriptionID: string
+    +PaymentDate: time.Time
+    +DaysBefore: int
+    +Channel: string
+    +SentAt: time.Time
+    +Key(): string
+  }
+  class "ValidationError" as ValidationError <<error>> {
+    +Field: string
+    +Message: string
+    +Error(): string
+    +Is(target: error): bool
+  }
+}
+
+User "1" *-- "0..*" Subscription : posiada
+Subscription "1" *-- "0..*" Payment : historia płatności
+Subscription "0..*" o-- "1..*" Category : kategorie
+Subscription *-- "1" Money : Price
+Payment *-- "1" Money : Amount
+Notification "0..*" --> "1" Subscription : dotyczy
+Subscription --> "1" SubscriptionStatus : Status
+Subscription --> "1" BillingCycle : Cycle
+User --> "1" Currency : BaseCurrency
+User --> "1" Role : Role
+Money --> "1" Currency : Currency
+WeeklyCycle ..|> CycleStrategy
+MonthlyCycle ..|> CycleStrategy
+YearlyCycle ..|> CycleStrategy
+Subscription ..> billing_cycle : «use»
+billing_cycle ..> CycleStrategy : «create»
+
+@enduml
