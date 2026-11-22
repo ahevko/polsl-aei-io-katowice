@@ -96,6 +96,31 @@ func toSubscriptionDTO(s *domain.Subscription) subscriptionDTO {
 	}
 }
 
+type categoryCostDTO struct {
+	CategoryID   string   `json:"categoryId"`
+	CategoryName string   `json:"categoryName"`
+	Monthly      moneyDTO `json:"monthly"`
+}
+
+type summaryDTO struct {
+	BaseCurrency        string            `json:"baseCurrency"`
+	MonthlyTotal        moneyDTO          `json:"monthlyTotal"`
+	YearlyTotal         moneyDTO          `json:"yearlyTotal"`
+	ActiveSubscriptions int               `json:"activeSubscriptions"`
+	PausedSubscriptions int               `json:"pausedSubscriptions"`
+	ByCategory          []categoryCostDTO `json:"byCategory"`
+}
+
+func toSummaryDTO(s *service.CostSummary) summaryDTO {
+	out := summaryDTO{BaseCurrency: string(s.BaseCurrency), MonthlyTotal: toMoneyDTO(s.MonthlyTotal),
+		YearlyTotal: toMoneyDTO(s.YearlyTotal), ActiveSubscriptions: s.ActiveSubscriptions,
+		PausedSubscriptions: s.PausedSubscriptions, ByCategory: []categoryCostDTO{}}
+	for _, c := range s.ByCategory {
+		out.ByCategory = append(out.ByCategory, categoryCostDTO{c.CategoryID, c.CategoryName, toMoneyDTO(c.Monthly)})
+	}
+	return out
+}
+
 type errorDTO struct {
 	Error string `json:"error"`
 	Field string `json:"field,omitempty"`

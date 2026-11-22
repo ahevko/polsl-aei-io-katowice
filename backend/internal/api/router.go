@@ -14,6 +14,7 @@ type Dependencies struct {
 	Auth          *service.AuthService
 	Subscriptions *service.SubscriptionService
 	Categories    *service.CategoryService
+	Analytics     *service.AnalyticsService
 	Logger        *log.Logger
 }
 
@@ -30,6 +31,7 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	auth := &AuthHandler{auth: d.Auth}
 	subs := &SubscriptionHandler{subs: d.Subscriptions}
 	cats := &CategoryHandler{categories: d.Categories}
+	an := &AnalyticsHandler{analytics: d.Analytics}
 	authReqUser := authMW.RequireUser
 
 	mux := http.NewServeMux()
@@ -58,6 +60,7 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	mux.HandleFunc("DELETE /api/subscriptions/{id}", authReqUser(subs.Delete))
 	mux.HandleFunc("POST /api/subscriptions/{id}/pause", authReqUser(subs.Pause))
 	mux.HandleFunc("POST /api/subscriptions/{id}/resume", authReqUser(subs.Resume))
+	mux.HandleFunc("GET /api/analytics/summary", authReqUser(an.Summary))
 
 	if opt.StaticDir != "" {
 		mux.Handle("/", spaHandler(opt.StaticDir))

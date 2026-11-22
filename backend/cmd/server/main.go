@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/api"
+	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/currency"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository/memory"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/security"
@@ -40,11 +41,15 @@ func main() {
 	catRepo := memory.NewCategoryRepository(store)
 	payRepo := memory.NewPaymentRepository(store)
 
+	rates := currency.NewCachedRateProvider(currency.NewExchangeAPISimulator(150*time.Millisecond), 30*time.Minute)
+
 	// --- Warstwa logiki biznesowej ---
 	clock := service.SystemClock{}
+	converter := service.NewCurrencyConverter(rates)
 	authSvc := service.NewAuthService(users, security.NewPBKDF2Hasher(), security.NewSessionStore(24*time.Hour), clock)
 	subSvc := service.NewSubscriptionService(subsRepo, catRepo, payRepo, clock)
 	catSvc := service.NewCategoryService(catRepo)
+	analytics := service.NewAnalyticsService(subsRepo, users, catRepo, converter)
 
 	if err := catSvc.EnsureDefaults(ctx); err != nil {
 		logger.Fatal(err)
@@ -59,7 +64,7 @@ func main() {
 		staticPath = ""
 	}
 	handler := api.NewRouter(api.Dependencies{
-		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Logger: logger,
+		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Analytics: analytics, Logger: logger,
 	}, api.Options{StaticDir: staticPath, CORSOrigin: *cors})
 
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
