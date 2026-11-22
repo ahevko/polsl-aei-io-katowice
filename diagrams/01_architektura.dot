@@ -1,0 +1,51 @@
+digraph arch {
+  graph [rankdir=TB fontname="Sans" fontsize=11 nodesep=0.45 ranksep=0.6 compound=true splines=spline];
+  edge [fontname="Sans" fontsize=8 color="#A80036" arrowhead=vee arrowsize=0.8 style=dashed];
+
+  user [shape=none image="out/actor.png" imagescale=false labelloc=b fontname="Sans" fontsize=10 label="Użytkownik końcowy" height=1.35 width=1.4];
+  timer [shape=none image="out/actor.png" imagescale=false labelloc=b fontname="Sans" fontsize=10 label="Czas (harmonogram)" height=1.35 width=1.6];
+
+  subgraph "cluster_pres" {
+    label=<<FONT POINT-SIZE="9">«layer»</FONT> <B>Warstwa prezentacji</B>> labeljust=l style=filled fillcolor="white" color="black" penwidth=1.2;
+  "spa" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>Aplikacja SPA</B><BR/><FONT POINT-SIZE="8">React 19 + TypeScript (Vite)<BR/>pages, components, auth, api</FONT>>];
+  "api" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>REST API (internal/api)</B><BR/><FONT POINT-SIZE="8">router, middleware,<BR/>handlery, DTO</FONT>>];
+  }
+
+  subgraph "cluster_logic" {
+    label=<<FONT POINT-SIZE="9">«layer»</FONT> <B>Warstwa logiki biznesowej</B>> labeljust=l style=filled fillcolor="white" color="black" penwidth=1.2;
+  "service" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>service</B><BR/><FONT POINT-SIZE="8">serwisy przypadków użycia,<BR/>BillingWorker, CurrencyConverter</FONT>>];
+  "domain" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>domain</B><BR/><FONT POINT-SIZE="8">Subscription, User, Payment,<BR/>Money, CycleStrategy …</FONT>>];
+  "security" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>security</B><BR/><FONT POINT-SIZE="8">PBKDF2Hasher, SessionStore</FONT>>];
+  }
+
+  subgraph "cluster_data" {
+    label=<<FONT POINT-SIZE="9">«layer»</FONT> <B>Warstwa dostępu do danych i integracji</B>> labeljust=l style=filled fillcolor="white" color="black" penwidth=1.2;
+  "repo" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>repository</B><BR/><FONT POINT-SIZE="8">interfejsy repozytoriów</FONT>>];
+  "memory" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>repository/memory</B><BR/><FONT POINT-SIZE="8">repozytoria in-memory + JSON</FONT>>];
+  "currency" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>currency</B><BR/><FONT POINT-SIZE="8">RateProvider + cache</FONT>>];
+  "notify" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>notify</B><BR/><FONT POINT-SIZE="8">Notifier</FONT>>];
+  }
+
+  "main" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«component»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>cmd/server (main.go)</B><BR/><FONT POINT-SIZE="8">tworzy obiekty i wstrzykuje<BR/>zależności (Composition Root)</FONT>>];
+  file [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 label=<<FONT POINT-SIZE="8">«artifact»</FONT><BR/><B>data/data.json</B>>];
+  "ext_api" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«external system»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>API kursów walut</B><BR/><FONT POINT-SIZE="8">(symulator)</FONT>>];
+  "ext_mail" [shape=box style=filled fillcolor="#FEFECE" color="#A80036" fontname="Sans" fontsize=10 margin="0.15,0.06" label=<<FONT POINT-SIZE="8">«external system»</FONT> <FONT POINT-SIZE="11">⊟</FONT><BR/><B>Serwis e-mail</B><BR/><FONT POINT-SIZE="8">(symulator)</FONT>>];
+
+  user -> spa [style=solid arrowhead=none];
+  spa -> api [label=" «use»
+ REST API (HTTP/JSON)"];
+  api -> service [label="«use»"];
+  api -> domain [label="«use»"];
+  timer -> service [style=solid arrowhead=none label=" RunOnce()"];
+  service -> domain [label="«use»"];
+  service -> security [label="«use»"];
+  service -> repo [label="«use»"];
+  service -> currency [label="«use»"];
+  service -> notify [label="«use»"];
+  memory -> repo [arrowhead=onormal label="«realize»"];
+  memory -> file [label="«write/read»"];
+  currency -> ext_api [label="«use»"];
+  notify -> ext_mail [label="«use»"];
+  main -> api [label="«create»" constraint=false];
+  main -> service [label="«create»"];
+}

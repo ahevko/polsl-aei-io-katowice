@@ -1,4 +1,4 @@
-package domain
+﻿package domain
 
 // Kategoria wydatku. Kategorie domyślne są słownikiem
 // zarządzanym przez administratora.

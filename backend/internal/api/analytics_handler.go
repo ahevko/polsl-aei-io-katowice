@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"net/http"
@@ -20,7 +20,7 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, cs)
 }
 
-// AnalyticsHandler – kontroler UC analizy wydatków.
+// Udostępnia statystyki finansowe użytkownika.
 type AnalyticsHandler struct {
 	analytics *service.AnalyticsService
 }

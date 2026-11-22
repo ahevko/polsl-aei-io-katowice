@@ -1,4 +1,4 @@
-// Typy DTO – odpowiadają strukturom z backend/internal/api/dto.go.
+﻿// Typy DTO – odpowiadają strukturom z backend/internal/api/dto.go.
 
 export type Currency = 'PLN' | 'EUR' | 'USD'
 export type BillingCycle = 'WEEKLY' | 'MONTHLY' | 'YEARLY'

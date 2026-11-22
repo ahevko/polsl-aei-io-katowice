@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"log"
@@ -37,11 +37,6 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
-
-	// Zostawione z pierwszej wersji dla testów. TODO: usunąć w przyszłości.
-	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"message": "Pong"})
 	})
 
 	// Konto

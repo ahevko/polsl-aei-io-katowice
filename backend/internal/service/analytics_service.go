@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"context"
@@ -8,14 +8,14 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository"
 )
 
-// CategoryCost – koszt miesięczny przypadający na kategorię.
+// Koszt miesięczny przypadający na kategorię.
 type CategoryCost struct {
 	CategoryID   string
 	CategoryName string
 	Monthly      domain.Money
 }
 
-// CostSummary – wynik UC „Przeglądaj podsumowanie kosztów”.
+// Podsumowanie kosztów subskrypcji użytkownika.
 type CostSummary struct {
 	BaseCurrency        domain.Currency
 	MonthlyTotal        domain.Money
@@ -25,7 +25,8 @@ type CostSummary struct {
 	ByCategory          []CategoryCost
 }
 
-// AnalyticsService – UC z diagramu „Analiza wydatków” (WF-03).
+// Serwis warstwy logiki dla analizy kosztów subskrypcji użytkownika. Współpracuje z repozytoriami
+// subskrypcji, użytkowników i kategorii oraz konwerterem walut.
 type AnalyticsService struct {
 	subs       repository.SubscriptionRepository
 	users      repository.UserRepository
@@ -37,9 +38,7 @@ func NewAnalyticsService(subs repository.SubscriptionRepository, users repositor
 	return &AnalyticsService{subs: subs, users: users, categories: categories, converter: converter}
 }
 
-// Summary – UC „Wylicz koszty miesięczne i roczne” + „Grupuj wydatki
-// według kategorii”. Subskrypcja w kilku kategoriach dzieli koszt po równo,
-// żeby suma po kategoriach równała się sumie całkowitej.
+// Summary oblicza podsumowanie kosztów subskrypcji użytkownika w jego bazowej walucie.
 func (s *AnalyticsService) Summary(ctx context.Context, userID string) (*CostSummary, error) {
 	u, err := s.users.GetByID(ctx, userID)
 	if err != nil {

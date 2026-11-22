@@ -1,0 +1,92 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "Warstwa logiki biznesowej" #FFFFFF {
+  package "internal/service" #FBEFC4 {
+    class "AuthService" as AuthService <<Service Layer>> {
+      -users: UserRepository
+      -hasher: PasswordHasher
+      -sessions: *SessionStore
+      -clock: Clock
+      +Register(email, password: string): (*User, error)
+      +Login(email, password: string): (string, *User, error)
+      +Logout(token: string)
+      +Authenticate(token: string): (*User, error)
+      +SetBaseCurrency(userID: string, c: Currency): (*User, error)
+    }
+    class "SubscriptionService" as SubscriptionService <<Service Layer>> {
+      -subs: SubscriptionRepository
+      -categories: CategoryRepository
+      -payments: PaymentRepository
+      -clock: Clock
+      +List(userID: string): ([]*Subscription, error)
+      +Get(userID, id: string): (*Subscription, error)
+      +Create(userID: string, in: SubscriptionInput): (*Subscription, error)
+      +Update(userID, id: string, in: SubscriptionInput): (*Subscription, error)
+      +Delete(userID, id: string): error
+      +Pause(userID, id: string): (*Subscription, error)
+      +Resume(userID, id: string, next: time.Time): (*Subscription, error)
+      -parse(in: SubscriptionInput): (Money, BillingCycle, error)
+    }
+    class "SubscriptionInput" as SubscriptionInput {
+      +Name: string
+      +Amount: float64
+      +Currency: string
+      +Cycle: string
+      +NextPaymentDate: time.Time
+      +CategoryIDs: []string
+    }
+    class "CategoryService" as CategoryService <<Service Layer>> {
+      -categories: CategoryRepository
+      +List(): ([]Category, error)
+      +EnsureDefaults(): error
+    }
+    interface "Clock" as Clock {
+      +Now(): time.Time
+    }
+    class "SystemClock" as SystemClock {
+      +Now(): time.Time
+    }
+    class "FixedClock" as FixedClock {
+      +T: time.Time
+      +Now(): time.Time
+    }
+  }
+  package "internal/security" #FBEFC4 {
+    interface "PasswordHasher" as PasswordHasher {
+      +Hash(password: string): (string, error)
+      +Verify(password, encoded: string): bool
+    }
+    class "PBKDF2Hasher" as PBKDF2Hasher {
+      +Iterations: int
+      +SaltLen: int
+      +KeyLen: int
+      +Hash(password: string): (string, error)
+      +Verify(password, encoded: string): bool
+    }
+    class "SessionStore" as SessionStore {
+      -mu: sync.Mutex
+      -sessions: map[string]session
+      -ttl: time.Duration
+      +Issue(userID: string): (string, error)
+      +Resolve(token: string): (string, bool)
+      +Revoke(token: string)
+    }
+    class "session" as session {
+      -userID: string
+      -expires: time.Time
+    }
+  }
+}
+
+SystemClock ..|> Clock
+FixedClock ..|> Clock
+PBKDF2Hasher ..|> PasswordHasher
+SessionStore *-- "0..*" session : sessions
+AuthService --> "1" PasswordHasher : hasher
+AuthService --> "1" SessionStore : sessions
+SubscriptionService ..> SubscriptionInput : «use»
+@enduml

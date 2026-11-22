@@ -1,4 +1,4 @@
-// Klienci zasobów REST API – odpowiadają kontrolerom (handlerom) backendu.
+﻿// Klienci zasobów REST API – odpowiadają kontrolerom (handlerom) backendu.
 import type { HttpClient } from './httpClient'
 import type { Currency, LoginResponse, User } from '../types'
 

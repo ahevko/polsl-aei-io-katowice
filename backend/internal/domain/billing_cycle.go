@@ -1,4 +1,4 @@
-package domain
+﻿package domain
 
 import (
 	"strings"
@@ -76,7 +76,7 @@ func addMonthsClamped(t time.Time, months int) time.Time {
 	return time.Date(firstOfTarget.Year(), firstOfTarget.Month(), d, 0, 0, 0, 0, t.Location())
 }
 
-// DateOnly obcina czas do północy UTC.
+// Obcina czas do północy UTC.
 func DateOnly(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)

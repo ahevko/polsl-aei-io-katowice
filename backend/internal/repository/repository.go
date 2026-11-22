@@ -1,4 +1,4 @@
-// Package repository definiuje kontrakty warstwy dostępu do danych (wzorzec REPOZYTORIUM).
+﻿// Package repository definiuje kontrakty warstwy dostępu do danych (wzorzec REPOZYTORIUM).
 // Warstwa logiki biznesowej zależy wyłącznie od tych interfejsów, a nie od konkretnej
 // technologii składowania danych. W prototypie używamy implementacji in-memory (pakiet memory),
 // docelowo można dodać implementację dla relacyjnej bazy danych bez zmian w serwisach.

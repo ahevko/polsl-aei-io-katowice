@@ -1,0 +1,95 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "Warstwa dostępu do danych i integracji" #FFFFFF {
+  package "internal/repository  (kontrakty)" #D3EED9 {
+    interface "UserRepository" as UserRepository <<interface, Repozytorium>> {
+      +Add(u: *User): error
+      +GetByID(id: string): (*User, error)
+      +GetByEmail(email: string): (*User, error)
+      +Update(u: *User): error
+    }
+    interface "SubscriptionRepository" as SubscriptionRepository <<interface, Repozytorium>> {
+      +Add(s: *Subscription): error
+      +GetByID(id: string): (*Subscription, error)
+      +ListByUser(userID: string): ([]*Subscription, error)
+      +ListActive(): ([]*Subscription, error)
+      +ListDue(day: time.Time): ([]*Subscription, error)
+      +Update(s: *Subscription): error
+      +Delete(id: string): error
+    }
+    interface "CategoryRepository" as CategoryRepository <<interface, Repozytorium>> {
+      +List(): ([]Category, error)
+      +Add(c: Category): error
+      +ExistAll(ids: []string): (bool, error)
+    }
+    interface "PaymentRepository" as PaymentRepository <<interface, Repozytorium>> {
+      +Add(p: *Payment): error
+      +ListByUser(userID: string): ([]*Payment, error)
+      +DeleteBySubscription(subscriptionID: string): error
+    }
+    interface "NotificationRepository" as NotificationRepository <<interface, Repozytorium>> {
+      +Add(n: *Notification): error
+      +Exists(key: string): (bool, error)
+    }
+  }
+  package "internal/repository/memory  (implementacja in-memory + plik JSON)" #D3EED9 {
+    class "memory.UserRepository" as mUserRepository {
+      -store: *Store
+      +Add(…) / GetByID(…)
+      +GetByEmail(…) / Update(…)
+    }
+    class "memory.SubscriptionRepository" as mSubscriptionRepository {
+      -store: *Store
+      +Add / GetByID / ListByUser(…)
+      +ListActive / ListDue / Update / Delete(…)
+      -filter(pred): []*Subscription
+    }
+    class "memory.CategoryRepository" as mCategoryRepository {
+      -store: *Store
+      +List / Add / ExistAll(…)
+    }
+    class "memory.PaymentRepository" as mPaymentRepository {
+      -store: *Store
+      +Add / ListByUser(…)
+      +DeleteBySubscription(…)
+    }
+    class "memory.NotificationRepository" as mNotificationRepository {
+      -store: *Store
+      +Add / Exists(…)
+    }
+    class "Store" as Store {
+      -mu: sync.RWMutex
+      -data: snapshot
+      -filePath: string
+      +{static} NewStore(filePath: string): (*Store, error)
+      -write(fn: func(*snapshot) error): error
+      -read(fn: func(*snapshot))
+      -persistLocked(): error
+    }
+    class "snapshot" as snapshot {
+      +Users: map[string]User
+      +Subscriptions: map[string]Subscription
+      +Categories: map[string]Category
+      +Payments: map[string]Payment
+      +Notifications: map[string]Notification
+    }
+  }
+}
+
+mUserRepository ..|> UserRepository
+mSubscriptionRepository ..|> SubscriptionRepository
+mCategoryRepository ..|> CategoryRepository
+mPaymentRepository ..|> PaymentRepository
+mNotificationRepository ..|> NotificationRepository
+mUserRepository o-- "1" Store
+mSubscriptionRepository o-- "1" Store
+mCategoryRepository o-- "1" Store
+mPaymentRepository o-- "1" Store
+mNotificationRepository o-- "1" Store
+Store *-- "1" snapshot : data
+
+@enduml

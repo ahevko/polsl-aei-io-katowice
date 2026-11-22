@@ -1,4 +1,4 @@
-package domain
+﻿package domain
 
 import (
 	"net/mail"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Rola użytkownika w systemie (aktorzy z diagramu UC).
+// Rola użytkownika w systemie.
 type Role string
 
 const (
@@ -14,7 +14,7 @@ const (
 	RoleAdmin Role = "ADMIN"
 )
 
-// User – konto użytkownika.
+// Konto użytkownika.
 type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`

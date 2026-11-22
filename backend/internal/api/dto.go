@@ -1,4 +1,4 @@
-// DTO (Data Transfer Object) jest to struktura danych używana do przesyłania danych między warstwami aplikacji.
+﻿// DTO (Data Transfer Object) jest to struktura danych używana do przesyłania danych między warstwami aplikacji.
 package api
 
 import (

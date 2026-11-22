@@ -1,4 +1,4 @@
-# System Monitorowania i Analizy Wydatków na Subskrypcje
+﻿# System Monitorowania i Analizy Wydatków na Subskrypcje
 
 Projekt zaliczeniowy z przedmiotu Inżynieria Oprogramowania (Politechnika Śląska, AEI, Semestr 5, 2026/2027).
 
@@ -28,7 +28,26 @@ Dokumentacja etapów oddawana jest na PZE.
 cd backend
 go run ./cmd/server
 ```
+
+### Frontend (Node.js)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Diagramy
 
-[Diagram klas domeny](diagrams/out/02_model_domenowy.png) · [Źródło PlantUML]
-(diagrams/02_model_domenowy.puml)
+```bash
+cd diagrams
+python generate.py
+```
+
+> [!WARNING]
+> Należy pobrać **plantuml.jar** ze strony https://plantuml.com/download oraz umieścić go w katalogu `diagrams/`
+
+- [Diagram architektury systemu](diagrams/out/01_architektura.png) · [Źródło Graphviz](diagrams/01_architektura.dot)
+- [Diagram klas domeny](diagrams/out/02_model_domenowy.png) · [Źródło PlantUML](diagrams/02_model_domenowy.puml)
+- [Diagram warstwy logiki biznesowej](diagrams/out/03_warstwa_logiki.png) · [Źródło PlantUML](diagrams/03_warstwa_logiki.puml)
+- [Diagram warstwy danych](diagrams/out/04_warstwa_danych.png) · [Źródło PlantUML](diagrams/04_warstwa_danych.puml)
