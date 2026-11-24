@@ -1,4 +1,4 @@
-﻿// HttpClient – jedyne miejsce, w którym frontend komunikuje się z backendem
+// HttpClient - jedyne miejsce, w którym frontend komunikuje się z backendem
 // (fetch + nagłówek Authorization + jednolita obsługa błędów).
 
 export class ApiError extends Error {

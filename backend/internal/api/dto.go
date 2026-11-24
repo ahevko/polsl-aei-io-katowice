@@ -1,4 +1,4 @@
-﻿// DTO (Data Transfer Object) jest to struktura danych używana do przesyłania danych między warstwami aplikacji.
+// DTO (Data Transfer Object) jest to struktura danych używana do przesyłania danych między warstwami aplikacji.
 package api
 
 import (
@@ -119,6 +119,12 @@ func toSummaryDTO(s *service.CostSummary) summaryDTO {
 		out.ByCategory = append(out.ByCategory, categoryCostDTO{c.CategoryID, c.CategoryName, toMoneyDTO(c.Monthly)})
 	}
 	return out
+}
+
+type workerReportDTO struct {
+	Day              string `json:"day"`
+	PaymentsRecorded int    `json:"paymentsRecorded"`
+	RemindersSent    int    `json:"remindersSent"`
 }
 
 type errorDTO struct {

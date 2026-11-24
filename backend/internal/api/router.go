@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"log"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/notify"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
@@ -15,6 +16,8 @@ type Dependencies struct {
 	Subscriptions *service.SubscriptionService
 	Categories    *service.CategoryService
 	Analytics     *service.AnalyticsService
+	Worker        *service.BillingWorker
+	Email         *notify.EmailSimulator
 	Logger        *log.Logger
 }
 
@@ -22,6 +25,7 @@ type Dependencies struct {
 type Options struct {
 	StaticDir  string // zbudowany frontend (frontend/dist); "" = brak
 	CORSOrigin string // np. http://localhost:5173 dla `npm run dev`
+	EnableDev  bool   // endpointy demonstracyjne /api/dev/*
 }
 
 // FASADA warstwy prezentacji: rejestruje wszystkie trasy REST API
@@ -55,7 +59,15 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	mux.HandleFunc("DELETE /api/subscriptions/{id}", authReqUser(subs.Delete))
 	mux.HandleFunc("POST /api/subscriptions/{id}/pause", authReqUser(subs.Pause))
 	mux.HandleFunc("POST /api/subscriptions/{id}/resume", authReqUser(subs.Resume))
+
+	// Analiza
 	mux.HandleFunc("GET /api/analytics/summary", authReqUser(an.Summary))
+
+	if opt.EnableDev {
+		dev := &DevHandler{worker: d.Worker, email: d.Email}
+		mux.HandleFunc("POST /api/dev/worker/run", authReqUser(dev.RunWorker))
+		mux.HandleFunc("GET /api/dev/outbox", authReqUser(dev.Outbox))
+	}
 
 	if opt.StaticDir != "" {
 		mux.Handle("/", spaHandler(opt.StaticDir))

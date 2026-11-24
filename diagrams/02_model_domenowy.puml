@@ -4,7 +4,7 @@ skinparam packageStyle rectangle
 skinparam shadowing false
 hide empty members
 
-package "internal/domain  (Warstwa logiki biznesowej – model dziedzinowy)" #FFFFFF {
+package "internal/domain  (Warstwa logiki biznesowej - model dziedzinowy)" #FFFFFF {
   class "User" as User {
     +ID: string
     +Email: string

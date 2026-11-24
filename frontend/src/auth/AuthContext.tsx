@@ -1,4 +1,4 @@
-// AuthContext – stan sesji użytkownika (token + profil) dostępny w całej
+// AuthContext - stan sesji użytkownika (token + profil) dostępny w całej
 // aplikacji; tworzy też klientów API (wstrzykiwanie zależności przez Context).
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -21,7 +21,7 @@ function saveToken(token: string | null) {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
   } catch {
-    /* przeglądarka bez localStorage – sesja tylko w pamięci */
+    /* przeglądarka bez localStorage - sesja tylko w pamięci */
   }
 }
 
