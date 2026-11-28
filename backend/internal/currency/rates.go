@@ -1,4 +1,6 @@
-﻿package currency
+// Package currency – dostęp do kursów walut: symulator zewnętrznego API
+// oraz pośrednik buforujący (cache).
+package currency
 
 import (
 	"context"
@@ -11,14 +13,14 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Tabela kursów: ile PLN kosztuje 1 jednostka danej waluty.
+// RateTable – tabela kursów: ile PLN kosztuje 1 jednostka danej waluty.
 type RateTable struct {
 	Rates     map[domain.Currency]float64 `json:"rates"`
 	FetchedAt time.Time                   `json:"fetchedAt"`
 	Source    string                      `json:"source"`
 }
 
-// Zwraca kurs waluty względem PLN.
+// PLNPer zwraca kurs waluty względem PLN.
 func (t RateTable) PLNPer(c domain.Currency) (float64, error) {
 	r, ok := t.Rates[c]
 	if !ok || r <= 0 {
@@ -27,12 +29,13 @@ func (t RateTable) PLNPer(c domain.Currency) (float64, error) {
 	return r, nil
 }
 
-// Kontrakt dostawcy kursów walut.
+// RateProvider – kontrakt dostawcy kursów walut.
 type RateProvider interface {
 	CurrentRates(ctx context.Context) (RateTable, error)
 }
 
-// SYMULATOR zewnętrznego API kursów walut.
+// ExchangeAPISimulator – SYMULATOR zewnętrznego API kursów walut
+// (zgodnie z WSS: „ustalone kursy referencyjne dla celów symulacyjnych”).
 // Symuluje opóźnienie sieci i zlicza wywołania, aby było widać działanie cache.
 type ExchangeAPISimulator struct {
 	reference map[domain.Currency]float64
@@ -40,7 +43,7 @@ type ExchangeAPISimulator struct {
 	calls     atomic.Int64
 }
 
-// Tworzy symulator z kursami referencyjnymi.
+// NewExchangeAPISimulator tworzy symulator z kursami referencyjnymi.
 func NewExchangeAPISimulator(latency time.Duration) *ExchangeAPISimulator {
 	return &ExchangeAPISimulator{
 		reference: map[domain.Currency]float64{domain.PLN: 1.0, domain.EUR: 4.25, domain.USD: 3.70},
@@ -63,12 +66,12 @@ func (s *ExchangeAPISimulator) CurrentRates(ctx context.Context) (RateTable, err
 	return RateTable{Rates: rates, FetchedAt: time.Now(), Source: "symulator-api"}, nil
 }
 
-// Liczba wywołań "zewnętrznego" API (do demonstracji i testów).
+// Calls – liczba wywołań „zewnętrznego” API (do demonstracji i testów).
 func (s *ExchangeAPISimulator) Calls() int64 { return s.calls.Load() }
 
-// Wzorzec PEŁNOMOCNIK (Proxy) / DEKORATOR:
+// CachedRateProvider – wzorzec PEŁNOMOCNIK (Proxy) / DEKORATOR:
 // ten sam interfejs co RateProvider, ale wynik jest buforowany przez ttl,
-// co ogranicza liczbę zapytań do zewnętrznego API.
+// co ogranicza liczbę zapytań do zewnętrznego API (WSS: buforowanie).
 type CachedRateProvider struct {
 	inner   RateProvider
 	ttl     time.Duration
@@ -78,7 +81,7 @@ type CachedRateProvider struct {
 	expires time.Time
 }
 
-// Opakowuje dowolnego dostawcę kursów.
+// NewCachedRateProvider opakowuje dowolnego dostawcę kursów.
 func NewCachedRateProvider(inner RateProvider, ttl time.Duration) *CachedRateProvider {
 	return &CachedRateProvider{inner: inner, ttl: ttl, now: time.Now}
 }
@@ -101,7 +104,7 @@ func (p *CachedRateProvider) CurrentRates(ctx context.Context) (RateTable, error
 	return t, nil
 }
 
-// Czyści bufor (np. po aktualizacji kursów przez administratora).
+// Invalidate czyści bufor (np. po aktualizacji kursów przez administratora).
 func (p *CachedRateProvider) Invalidate() {
 	p.mu.Lock()
 	p.cached = nil
