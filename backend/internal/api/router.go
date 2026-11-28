@@ -14,6 +14,7 @@ type Dependencies struct {
 	Auth          *service.AuthService
 	Subscriptions *service.SubscriptionService
 	Categories    *service.CategoryService
+	Analytics     *service.AnalyticsService
 	Logger        *log.Logger
 }
 
@@ -30,15 +31,12 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	auth := &AuthHandler{auth: d.Auth}
 	subs := &SubscriptionHandler{subs: d.Subscriptions}
 	cats := &CategoryHandler{categories: d.Categories}
+	an := &AnalyticsHandler{analytics: d.Analytics}
 	u := authMW.RequireUser
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
-	// zostawione z pierwszej wersji (frontend jeszcze z tego korzysta)
-	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"message": "Pong"})
 	})
 
 	// Konto (diagram „Uwierzytelnianie i konto użytkownika”)
@@ -57,6 +55,9 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	mux.HandleFunc("DELETE /api/subscriptions/{id}", u(subs.Delete))
 	mux.HandleFunc("POST /api/subscriptions/{id}/pause", u(subs.Pause))
 	mux.HandleFunc("POST /api/subscriptions/{id}/resume", u(subs.Resume))
+
+	// Analiza (diagram „Analiza wydatków i historia płatności”)
+	mux.HandleFunc("GET /api/analytics/summary", u(an.Summary))
 
 	if opt.StaticDir != "" {
 		mux.Handle("/", spaHandler(opt.StaticDir))
