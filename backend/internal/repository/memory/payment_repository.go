@@ -1,4 +1,4 @@
-﻿package memory
+package memory
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Implementacja in-memory historii płatności.
+// PaymentRepository – implementacja in-memory historii płatności.
 type PaymentRepository struct{ store *Store }
 
 func NewPaymentRepository(s *Store) *PaymentRepository { return &PaymentRepository{store: s} }

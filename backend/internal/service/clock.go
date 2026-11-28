@@ -1,18 +1,18 @@
-﻿package service
+package service
 
 import "time"
 
-// Abstrakcja czasu systemowego.
+// Clock – abstrakcja czasu systemowego (testowalność Workera i serwisów).
 type Clock interface {
 	Now() time.Time
 }
 
-// Zegar rzeczywisty.
+// SystemClock – zegar rzeczywisty.
 type SystemClock struct{}
 
 func (SystemClock) Now() time.Time { return time.Now().UTC() }
 
-// Zegar o stałym wskazaniu (dla przyszłych testów).
+// FixedClock – zegar o stałym wskazaniu (testy).
 type FixedClock struct{ T time.Time }
 
 func (c FixedClock) Now() time.Time { return c.T }

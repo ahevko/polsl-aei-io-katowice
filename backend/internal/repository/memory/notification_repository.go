@@ -1,4 +1,4 @@
-﻿package memory
+package memory
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Implementacja in-memory rejestru przypomnień.
+// NotificationRepository – implementacja in-memory rejestru przypomnień.
 type NotificationRepository struct{ store *Store }
 
 func NewNotificationRepository(s *Store) *NotificationRepository {

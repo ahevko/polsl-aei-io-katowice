@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// Mapuje błędy dziedzinowe na kody HTTP.
+// writeError mapuje błędy dziedzinowe na kody HTTP.
 func writeError(w http.ResponseWriter, err error) {
 	var ve *domain.ValidationError
 	switch {

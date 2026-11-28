@@ -1,3 +1,6 @@
+// Punkt wejścia serwera – KORZEŃ KOMPOZYCJI (Composition Root):
+// tu i tylko tu tworzone są konkretne implementacje i wstrzykiwane do
+// kolejnych warstw (Dependency Injection przez konstruktory).
 package main
 
 import (
@@ -12,9 +15,7 @@ import (
 	"time"
 
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/api"
-	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/currency"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
-	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/notify"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository/memory"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/security"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
@@ -25,9 +26,7 @@ func main() {
 	dataFile := flag.String("data", "data/data.json", "plik danych (pusty = tylko pamięć)")
 	staticDir := flag.String("static", "../frontend/dist", "katalog zbudowanego frontendu")
 	cors := flag.String("cors", "http://localhost:5173", "dozwolony Origin (serwer Vite)")
-	dev := flag.Bool("dev", true, "endpointy demonstracyjne /api/dev/*")
 	seed := flag.Bool("seed", true, "utwórz konto demo@example.com / demo1234")
-	interval := flag.Duration("worker-interval", time.Hour, "co ile uruchamiać Workera")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
@@ -43,20 +42,12 @@ func main() {
 	subsRepo := memory.NewSubscriptionRepository(store)
 	catRepo := memory.NewCategoryRepository(store)
 	payRepo := memory.NewPaymentRepository(store)
-	notifRepo := memory.NewNotificationRepository(store)
-
-	rates := currency.NewCachedRateProvider(currency.NewExchangeAPISimulator(150*time.Millisecond), 30*time.Minute)
-	email := notify.NewEmailSimulator(logger, 200)
 
 	// --- Warstwa logiki biznesowej ---
 	clock := service.SystemClock{}
-	converter := service.NewCurrencyConverter(rates)
 	authSvc := service.NewAuthService(users, security.NewPBKDF2Hasher(), security.NewSessionStore(24*time.Hour), clock)
 	subSvc := service.NewSubscriptionService(subsRepo, catRepo, payRepo, clock)
 	catSvc := service.NewCategoryService(catRepo)
-	analytics := service.NewAnalyticsService(subsRepo, users, catRepo, converter)
-	notifSvc := service.NewNotificationService(subsRepo, users, notifRepo, email, []int{3, 1}, clock)
-	worker := service.NewBillingWorker(subsRepo, payRepo, notifSvc, clock, logger)
 
 	if err := catSvc.EnsureDefaults(ctx); err != nil {
 		logger.Fatal(err)
@@ -71,11 +62,8 @@ func main() {
 		staticPath = ""
 	}
 	handler := api.NewRouter(api.Dependencies{
-		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Analytics: analytics,
-		Worker: worker, Email: email, Logger: logger,
-	}, api.Options{StaticDir: staticPath, CORSOrigin: *cors, EnableDev: *dev})
-
-	worker.Start(ctx, *interval)
+		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Logger: logger,
+	}, api.Options{StaticDir: staticPath, CORSOrigin: *cors})
 
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
@@ -91,7 +79,7 @@ func main() {
 	logger.Println("Zatrzymano serwer.")
 }
 
-// Tworzy konto demonstracyjne z kilkoma subskrypcjami.
+// seedDemo tworzy konto demonstracyjne z kilkoma subskrypcjami.
 func seedDemo(ctx context.Context, logger *log.Logger, auth *service.AuthService, subs *service.SubscriptionService) {
 	u, err := auth.Register(ctx, "demo@example.com", "demo1234")
 	if errors.Is(err, domain.ErrConflict) {

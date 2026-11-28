@@ -1,9 +1,9 @@
-// AuthContext - stan sesji użytkownika (token + profil) dostępny w całej
+// AuthContext – stan sesji użytkownika (token + profil) dostępny w całej
 // aplikacji; tworzy też klientów API (wstrzykiwanie zależności przez Context).
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { HttpClient } from '../api/httpClient'
-import { AuthApi } from '../api/services'
+import { AuthApi, SubscriptionApi } from '../api/services'
 import type { Currency, User } from '../types'
 
 const TOKEN_KEY = 'subskrypcje.token'
@@ -21,12 +21,13 @@ function saveToken(token: string | null) {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
   } catch {
-    /* przeglądarka bez localStorage - sesja tylko w pamięci */
+    /* przeglądarka bez localStorage – sesja tylko w pamięci */
   }
 }
 
 export interface Apis {
   auth: AuthApi
+  subscriptions: SubscriptionApi
 }
 
 interface AuthState {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const http = new HttpClient('/api', () => token, clearSession)
     return {
       auth: new AuthApi(http),
+      subscriptions: new SubscriptionApi(http),
     }
   }, [token, clearSession])
 

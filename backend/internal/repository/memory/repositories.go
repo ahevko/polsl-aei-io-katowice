@@ -1,10 +1,10 @@
-﻿package memory
+package memory
 
 import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository"
 )
 
-// Kontrola na etapie kompilacji, że implementacje spełniają kontrakty interfejsów repozytoriów.
+// Kontrola na etapie kompilacji, że implementacje spełniają kontrakty.
 var (
 	_ repository.UserRepository         = (*UserRepository)(nil)
 	_ repository.SubscriptionRepository = (*SubscriptionRepository)(nil)

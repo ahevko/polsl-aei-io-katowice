@@ -1,4 +1,6 @@
-﻿package service
+// Package service – warstwa logiki biznesowej. Serwisy realizują przypadki
+// użycia, korzystając z modelu domenowego i kontraktów repozytoriów.
+package service
 
 import (
 	"context"
@@ -9,7 +11,8 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/security"
 )
 
-// Zarejestruj konto, zaloguj się, wyloguj się, ustaw walutę domyślną.
+// AuthService – UC: Zarejestruj konto, Zaloguj się, Wyloguj się,
+// Ustaw walutę domyślną (WF-05).
 type AuthService struct {
 	users    repository.UserRepository
 	hasher   security.PasswordHasher
@@ -17,15 +20,15 @@ type AuthService struct {
 	clock    Clock
 }
 
-// Wstrzykiwanie zależności przez konstruktor.
+// NewAuthService – wstrzykiwanie zależności przez konstruktor.
 func NewAuthService(users repository.UserRepository, hasher security.PasswordHasher, sessions *security.SessionStore, clock Clock) *AuthService {
 	return &AuthService{users: users, hasher: hasher, sessions: sessions, clock: clock}
 }
 
-// Tworzy konto; zajęty e-mail jest odrzucany (ErrConflict).
+// Register tworzy konto; zajęty e-mail jest odrzucany (ErrConflict).
 func (s *AuthService) Register(ctx context.Context, email, password string) (*domain.User, error) {
 	email = domain.NormalizeEmail(email)
-	if err := domain.ValidateEmail(email); err != nil {
+	if err := domain.ValidateEmail(email); err != nil { // UC „Waliduj dane konta”
 		return nil, err
 	}
 	if err := domain.ValidatePassword(password); err != nil {
@@ -48,7 +51,7 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*do
 	return u, nil
 }
 
-// Weryfikuje dane i wydaje token sesji.
+// Login weryfikuje dane i wydaje token sesji.
 func (s *AuthService) Login(ctx context.Context, email, password string) (string, *domain.User, error) {
 	u, err := s.users.GetByEmail(ctx, domain.NormalizeEmail(email))
 	if errors.Is(err, domain.ErrNotFound) || (err == nil && !s.hasher.Verify(password, u.PasswordHash)) {
@@ -64,10 +67,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	return token, u, nil
 }
 
-// Unieważnia token.
+// Logout unieważnia token.
 func (s *AuthService) Logout(token string) { s.sessions.Revoke(token) }
 
-// Zwraca zalogowanego użytkownika na podstawie tokenu.
+// Authenticate zwraca zalogowanego użytkownika na podstawie tokenu.
 func (s *AuthService) Authenticate(ctx context.Context, token string) (*domain.User, error) {
 	id, ok := s.sessions.Resolve(token)
 	if !ok {
@@ -80,7 +83,7 @@ func (s *AuthService) Authenticate(ctx context.Context, token string) (*domain.U
 	return u, nil
 }
 
-// Ustawia walutę bazową użytkownika; waluta musi istnieć w słowniku.
+// SetBaseCurrency – UC „Ustaw walutę domyślną”.
 func (s *AuthService) SetBaseCurrency(ctx context.Context, userID string, c domain.Currency) (*domain.User, error) {
 	u, err := s.users.GetByID(ctx, userID)
 	if err != nil {

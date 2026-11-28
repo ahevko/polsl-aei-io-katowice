@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
-// Kontroler autoryzacji użytkowników.
+// AuthHandler – kontroler UC konta użytkownika.
 type AuthHandler struct {
 	auth *service.AuthService
 }

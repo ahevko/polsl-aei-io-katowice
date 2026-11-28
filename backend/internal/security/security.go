@@ -1,4 +1,5 @@
-﻿package security
+// Package security – haszowanie haseł i sesje użytkowników.
+package security
 
 import (
 	"crypto/pbkdf2"
@@ -14,13 +15,14 @@ import (
 	"time"
 )
 
-// Kontrakt jednokierunkowego haszowania haseł.
+// PasswordHasher – kontrakt jednokierunkowego haszowania haseł (wymaganie
+// pozafunkcjonalne: bezpieczeństwo).
 type PasswordHasher interface {
 	Hash(password string) (string, error)
 	Verify(password, encoded string) bool
 }
 
-// PBKDF2-HMAC-SHA256 z unikatową solą (biblioteka standardowa Go).
+// PBKDF2Hasher – PBKDF2-HMAC-SHA256 z unikatową solą (biblioteka standardowa Go).
 // Format: pbkdf2-sha256$<iteracje>$<sól b64>$<skrót b64>
 type PBKDF2Hasher struct {
 	Iterations int
@@ -28,7 +30,7 @@ type PBKDF2Hasher struct {
 	KeyLen     int
 }
 
-// Parametry zgodne z zaleceniami OWASP dla SHA-256.
+// NewPBKDF2Hasher – parametry zgodne z zaleceniami OWASP dla SHA-256.
 func NewPBKDF2Hasher() *PBKDF2Hasher {
 	return &PBKDF2Hasher{Iterations: 600_000, SaltLen: 16, KeyLen: 32}
 }
@@ -68,7 +70,8 @@ func (h *PBKDF2Hasher) Verify(password, encoded string) bool {
 	return subtle.ConstantTimeCompare(got, want) == 1
 }
 
-// Sesje logowania przechowywane w pamięci z czasem wygaśnięcia.
+// SessionStore – sesje logowania (token okaziciela → identyfikator użytkownika),
+// przechowywane w pamięci z czasem wygaśnięcia.
 type SessionStore struct {
 	mu       sync.Mutex
 	sessions map[string]session
@@ -80,12 +83,12 @@ type session struct {
 	expires time.Time
 }
 
-// Tworzy magazyn sesji o zadanym czasie życia.
+// NewSessionStore tworzy magazyn sesji o zadanym czasie życia.
 func NewSessionStore(ttl time.Duration) *SessionStore {
 	return &SessionStore{sessions: map[string]session{}, ttl: ttl}
 }
 
-// Tworzy nową sesję i zwraca losowy token.
+// Issue tworzy nową sesję i zwraca losowy token.
 func (s *SessionStore) Issue(userID string) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -98,7 +101,7 @@ func (s *SessionStore) Issue(userID string) (string, error) {
 	return token, nil
 }
 
-// Zwraca użytkownika przypisanego do ważnego tokenu.
+// Resolve zwraca użytkownika przypisanego do ważnego tokenu.
 func (s *SessionStore) Resolve(token string) (string, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -113,7 +116,7 @@ func (s *SessionStore) Resolve(token string) (string, bool) {
 	return sess.userID, true
 }
 
-// Unieważnia sesję (wylogowanie).
+// Revoke unieważnia sesję (wylogowanie).
 func (s *SessionStore) Revoke(token string) {
 	s.mu.Lock()
 	delete(s.sessions, token)

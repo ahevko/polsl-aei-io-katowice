@@ -1,10 +1,9 @@
-﻿package api
+package api
 
 import (
 	"context"
 	"log"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -12,19 +11,19 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
-// Wzorzec ŁAŃCUCH ZOBOWIĄZAŃ / DEKORATOR: każde ogniwo
+// Middleware – wzorzec ŁAŃCUCH ZOBOWIĄZAŃ / DEKORATOR: każde ogniwo
 // opakowuje kolejny http.Handler i może przerwać przetwarzanie żądania.
 type Middleware func(http.Handler) http.Handler
 
-// Składa middleware w kolejności podania (pierwszy = zewnętrzny).
+// Chain składa middleware w kolejności podania (pierwszy = zewnętrzny).
 func Chain(h http.Handler, mws ...Middleware) http.Handler {
-	for _, mw := range slices.Backward(mws) {
-		h = mw(h)
+	for i := len(mws) - 1; i >= 0; i-- {
+		h = mws[i](h)
 	}
 	return h
 }
 
-// Zapisuje metodę, ścieżkę, status i czas obsługi żądania.
+// Logging zapisuje metodę, ścieżkę, status i czas obsługi żądania.
 func Logging(logger *log.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +47,7 @@ func (s *statusRecorder) WriteHeader(code int) {
 	s.ResponseWriter.WriteHeader(code)
 }
 
-// Zamienia panikę w odpowiedź 500 zamiast zatrzymania serwera.
+// Recover zamienia panikę w odpowiedź 500 zamiast zatrzymania serwera.
 func Recover(logger *log.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +62,7 @@ func Recover(logger *log.Logger) Middleware {
 	}
 }
 
-// CORS pozwala serwerowi deweloperskiemu Vite (na innym porcie) wywoływać API.
+// CORS pozwala serwerowi deweloperskiemu Vite (inny port) wołać API.
 func CORS(allowedOrigin string) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +84,7 @@ type ctxKey int
 
 const userKey ctxKey = 1
 
-// Wymaga ważnego tokenu sesji (nagłówek Authorization: Bearer).
+// AuthMiddleware – wymaga ważnego tokenu sesji (nagłówek Authorization: Bearer).
 type AuthMiddleware struct {
 	auth *service.AuthService
 }
@@ -94,7 +93,7 @@ func NewAuthMiddleware(auth *service.AuthService) *AuthMiddleware {
 	return &AuthMiddleware{auth: auth}
 }
 
-// Przepuszcza żądanie tylko dla zalogowanego użytkownika.
+// RequireUser przepuszcza żądanie tylko dla zalogowanego użytkownika.
 func (m *AuthMiddleware) RequireUser(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u, err := m.auth.Authenticate(r.Context(), bearerToken(r))
@@ -106,7 +105,7 @@ func (m *AuthMiddleware) RequireUser(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Odczytuje zalogowanego użytkownika z kontekstu żądania.
+// currentUser odczytuje zalogowanego użytkownika z kontekstu żądania.
 func currentUser(r *http.Request) *domain.User {
 	u, _ := r.Context().Value(userKey).(*domain.User)
 	return u

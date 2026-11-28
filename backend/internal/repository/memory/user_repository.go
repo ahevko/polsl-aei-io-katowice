@@ -1,4 +1,4 @@
-﻿package memory
+package memory
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Implementacja in-memory repozytorium użytkowników.
+// UserRepository – implementacja in-memory repozytorium użytkowników.
 type UserRepository struct{ store *Store }
 
 func NewUserRepository(s *Store) *UserRepository { return &UserRepository{store: s} }

@@ -1,4 +1,7 @@
-﻿package memory
+// Package memory – implementacja repozytoriów w pamięci operacyjnej
+// z opcjonalnym zapisem migawki do pliku JSON (uproszczona „baza danych”
+// prototypu #1).
+package memory
 
 import (
 	"encoding/json"
@@ -11,7 +14,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Całość danych zapisywana do pliku.
+// snapshot – całość danych zapisywana do pliku.
 type snapshot struct {
 	Users         map[string]domain.User         `json:"users"`
 	Subscriptions map[string]domain.Subscription `json:"subscriptions"`
@@ -20,7 +23,7 @@ type snapshot struct {
 	Notifications map[string]domain.Notification `json:"notifications"`
 }
 
-// Współdzielony magazyn danych wszystkich repozytoriów in-memory.
+// Store – współdzielony magazyn danych wszystkich repozytoriów in-memory.
 // Dostęp chroniony muteksem (Worker działa równolegle z obsługą żądań HTTP).
 type Store struct {
 	mu       sync.RWMutex
@@ -28,7 +31,7 @@ type Store struct {
 	filePath string
 }
 
-// Tworzy magazyn; gdy filePath != "" dane są wczytywane z pliku
+// NewStore tworzy magazyn; gdy filePath != "" dane są wczytywane z pliku
 // i zapisywane do niego po każdej modyfikacji.
 func NewStore(filePath string) (*Store, error) {
 	s := &Store{filePath: filePath, data: snapshot{
@@ -54,7 +57,7 @@ func NewStore(filePath string) (*Store, error) {
 	return s, nil
 }
 
-// Wykonuje modyfikację pod blokadą i utrwala dane.
+// write wykonuje modyfikację pod blokadą i utrwala dane.
 func (s *Store) write(fn func(d *snapshot) error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -64,7 +67,7 @@ func (s *Store) write(fn func(d *snapshot) error) error {
 	return s.persistLocked()
 }
 
-// Wykonuje odczyt pod blokadą współdzieloną.
+// read wykonuje odczyt pod blokadą współdzieloną.
 func (s *Store) read(fn func(d *snapshot)) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -86,5 +89,5 @@ func (s *Store) persistLocked() error {
 	if err := os.WriteFile(tmp, raw, 0o600); err != nil {
 		return err
 	}
-	return os.Rename(tmp, s.filePath)
+	return os.Rename(tmp, s.filePath) // zapis atomowy
 }

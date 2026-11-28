@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
-// Kontroler subskrypcji użytkowników.
+// SubscriptionHandler – kontroler UC zarządzania subskrypcjami.
 type SubscriptionHandler struct {
 	subs *service.SubscriptionService
 }

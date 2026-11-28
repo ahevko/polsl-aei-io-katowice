@@ -1,4 +1,6 @@
-// DTO (Data Transfer Object) jest to struktura danych używana do przesyłania danych między warstwami aplikacji.
+// Package api – warstwa prezentacji po stronie serwera: REST API (JSON)
+// wywoływane przez aplikację SPA (React). Odpowiada za mapowanie HTTP ↔
+// serwisy oraz za konwersję modelu domenowego na obiekty DTO.
 package api
 
 import (
@@ -9,6 +11,8 @@ import (
 )
 
 const dateLayout = "2006-01-02"
+
+// --- żądania (Data Transfer Objects) ---
 
 type credentialsRequest struct {
 	Email    string `json:"email"`
@@ -94,37 +98,6 @@ func toSubscriptionDTO(s *domain.Subscription) subscriptionDTO {
 		Cycle: string(s.Cycle), NextPaymentDate: s.NextPaymentDate.Format(dateLayout),
 		CategoryIDs: s.CategoryIDs, Status: string(s.Status),
 	}
-}
-
-type categoryCostDTO struct {
-	CategoryID   string   `json:"categoryId"`
-	CategoryName string   `json:"categoryName"`
-	Monthly      moneyDTO `json:"monthly"`
-}
-
-type summaryDTO struct {
-	BaseCurrency        string            `json:"baseCurrency"`
-	MonthlyTotal        moneyDTO          `json:"monthlyTotal"`
-	YearlyTotal         moneyDTO          `json:"yearlyTotal"`
-	ActiveSubscriptions int               `json:"activeSubscriptions"`
-	PausedSubscriptions int               `json:"pausedSubscriptions"`
-	ByCategory          []categoryCostDTO `json:"byCategory"`
-}
-
-func toSummaryDTO(s *service.CostSummary) summaryDTO {
-	out := summaryDTO{BaseCurrency: string(s.BaseCurrency), MonthlyTotal: toMoneyDTO(s.MonthlyTotal),
-		YearlyTotal: toMoneyDTO(s.YearlyTotal), ActiveSubscriptions: s.ActiveSubscriptions,
-		PausedSubscriptions: s.PausedSubscriptions, ByCategory: []categoryCostDTO{}}
-	for _, c := range s.ByCategory {
-		out.ByCategory = append(out.ByCategory, categoryCostDTO{c.CategoryID, c.CategoryName, toMoneyDTO(c.Monthly)})
-	}
-	return out
-}
-
-type workerReportDTO struct {
-	Day              string `json:"day"`
-	PaymentsRecorded int    `json:"paymentsRecorded"`
-	RemindersSent    int    `json:"remindersSent"`
 }
 
 type errorDTO struct {

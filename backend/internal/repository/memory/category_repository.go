@@ -1,4 +1,4 @@
-﻿package memory
+package memory
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Implementacja in-memory słownika kategorii.
+// CategoryRepository – implementacja in-memory słownika kategorii.
 type CategoryRepository struct{ store *Store }
 
 func NewCategoryRepository(s *Store) *CategoryRepository { return &CategoryRepository{store: s} }

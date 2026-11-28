@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository"
 )
 
-// Dane wejściowe formularza subskrypcji (dodawanie/edycja).
+// SubscriptionInput – dane wejściowe formularza subskrypcji (dodawanie/edycja).
 type SubscriptionInput struct {
 	Name            string
 	Amount          float64
@@ -18,7 +18,7 @@ type SubscriptionInput struct {
 	CategoryIDs     []string
 }
 
-// Implementacja logiki biznesowej subskrypcji.
+// SubscriptionService – UC z diagramu „Zarządzanie subskrypcjami” (WF-01, WF-04).
 type SubscriptionService struct {
 	subs       repository.SubscriptionRepository
 	categories repository.CategoryRepository
@@ -30,12 +30,13 @@ func NewSubscriptionService(subs repository.SubscriptionRepository, categories r
 	return &SubscriptionService{subs: subs, categories: categories, payments: payments, clock: clock}
 }
 
-// Zwraca subskrypcje użytkownika.
+// List – UC „Przeglądaj listę subskrypcji”.
 func (s *SubscriptionService) List(ctx context.Context, userID string) ([]*domain.Subscription, error) {
 	return s.subs.ListByUser(ctx, userID)
 }
 
-// Zwraca subskrypcję, sprawdzając, czy należy do użytkownika.
+// Get zwraca subskrypcję, sprawdzając, czy należy do użytkownika
+// (WF-05: użytkownik widzi wyłącznie własne dane).
 func (s *SubscriptionService) Get(ctx context.Context, userID, id string) (*domain.Subscription, error) {
 	sub, err := s.subs.GetByID(ctx, id)
 	if err != nil {
@@ -47,7 +48,8 @@ func (s *SubscriptionService) Get(ctx context.Context, userID, id string) (*doma
 	return sub, nil
 }
 
-// Tworzy nową subskrypcję.
+// Create – UC „Dodaj subskrypcję” (include: Przypisz kategorię,
+// Wylicz datę następnej płatności).
 func (s *SubscriptionService) Create(ctx context.Context, userID string, in SubscriptionInput) (*domain.Subscription, error) {
 	price, cycle, err := s.parse(ctx, in)
 	if err != nil {
@@ -63,7 +65,7 @@ func (s *SubscriptionService) Create(ctx context.Context, userID string, in Subs
 	return sub, s.subs.Add(ctx, sub)
 }
 
-// Modyfikuje istniejącą subskrypcję, sprawdzając, czy należy do użytkownika.
+// Update – UC „Edytuj subskrypcję”.
 func (s *SubscriptionService) Update(ctx context.Context, userID, id string, in SubscriptionInput) (*domain.Subscription, error) {
 	sub, err := s.Get(ctx, userID, id)
 	if err != nil {
@@ -85,7 +87,7 @@ func (s *SubscriptionService) Update(ctx context.Context, userID, id string, in 
 	return sub, s.subs.Update(ctx, sub)
 }
 
-// Usuwa subskrypcję (wraz z historią płatności), sprawdzając, czy należy do użytkownika.
+// Delete – UC „Usuń subskrypcję”: usuwa również jej historię płatności.
 func (s *SubscriptionService) Delete(ctx context.Context, userID, id string) error {
 	if _, err := s.Get(ctx, userID, id); err != nil {
 		return err
@@ -96,7 +98,7 @@ func (s *SubscriptionService) Delete(ctx context.Context, userID, id string) err
 	return s.subs.Delete(ctx, id)
 }
 
-// Zawiesza aktywną subskrypcję.
+// Pause – UC „Wstrzymaj subskrypcję”.
 func (s *SubscriptionService) Pause(ctx context.Context, userID, id string) (*domain.Subscription, error) {
 	sub, err := s.Get(ctx, userID, id)
 	if err != nil {
@@ -108,7 +110,7 @@ func (s *SubscriptionService) Pause(ctx context.Context, userID, id string) (*do
 	return sub, s.subs.Update(ctx, sub)
 }
 
-// Wznawia wstrzymaną subskrypcję z nową datą następnej płatności.
+// Resume – UC „Wznów subskrypcję” (include: Wylicz datę następnej płatności).
 func (s *SubscriptionService) Resume(ctx context.Context, userID, id string, next time.Time) (*domain.Subscription, error) {
 	sub, err := s.Get(ctx, userID, id)
 	if err != nil {
@@ -123,7 +125,7 @@ func (s *SubscriptionService) Resume(ctx context.Context, userID, id string, nex
 	return sub, s.subs.Update(ctx, sub)
 }
 
-// Waliduje pola wspólne dla dodawania i edycji.
+// parse waliduje pola wspólne dla dodawania i edycji (UC „Przypisz kategorię”).
 func (s *SubscriptionService) parse(ctx context.Context, in SubscriptionInput) (domain.Money, domain.BillingCycle, error) {
 	cur, err := domain.ParseCurrency(in.Currency)
 	if err != nil {
@@ -149,7 +151,7 @@ func (s *SubscriptionService) parse(ctx context.Context, in SubscriptionInput) (
 	return price, cycle, nil
 }
 
-// Udostępnia słownik kategorii.
+// CategoryService – udostępnia słownik kategorii (WF-04).
 type CategoryService struct {
 	categories repository.CategoryRepository
 }
@@ -158,12 +160,12 @@ func NewCategoryService(categories repository.CategoryRepository) *CategoryServi
 	return &CategoryService{categories: categories}
 }
 
-// Zwraca dostępne kategorie.
+// List zwraca dostępne kategorie.
 func (s *CategoryService) List(ctx context.Context) ([]domain.Category, error) {
 	return s.categories.List(ctx)
 }
 
-// Zasila słownik kategoriami domyślnymi (start systemu).
+// EnsureDefaults zasila słownik kategoriami domyślnymi (start systemu).
 func (s *CategoryService) EnsureDefaults(ctx context.Context) error {
 	existing, err := s.categories.List(ctx)
 	if err != nil || len(existing) > 0 {

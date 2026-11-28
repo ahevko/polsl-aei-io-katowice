@@ -1,4 +1,4 @@
-﻿package memory
+package memory
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
 )
 
-// Implementacja in-memory repozytorium subskrypcji.
+// SubscriptionRepository – implementacja in-memory repozytorium subskrypcji.
 type SubscriptionRepository struct{ store *Store }
 
 func NewSubscriptionRepository(s *Store) *SubscriptionRepository {
