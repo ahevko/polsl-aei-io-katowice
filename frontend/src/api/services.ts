@@ -1,6 +1,6 @@
 // Klienci zasobów REST API – odpowiadają kontrolerom (handlerom) backendu.
 import type { HttpClient } from './httpClient'
-import type { Category, Currency, LoginResponse, Subscription, SubscriptionInput, User } from '../types'
+import type { Category, CostSummary, Currency, LoginResponse, Subscription, SubscriptionInput, User } from '../types'
 
 export class AuthApi {
   private readonly http: HttpClient
@@ -49,5 +49,15 @@ export class SubscriptionApi {
   }
   resume(id: string, nextPaymentDate: string) {
     return this.http.post<Subscription>(`/subscriptions/${id}/resume`, { nextPaymentDate })
+  }
+}
+
+export class AnalyticsApi {
+  private readonly http: HttpClient
+  constructor(http: HttpClient) {
+    this.http = http
+  }
+  summary() {
+    return this.http.get<CostSummary>('/analytics/summary')
   }
 }

@@ -1,9 +1,10 @@
 import { useAuth } from '../auth/AuthContext'
 
-export type View = 'subscriptions'
+export type View = 'subscriptions' | 'summary'
 
 const LINKS: { view: View; label: string }[] = [
   { view: 'subscriptions', label: 'Subskrypcje' },
+  { view: 'summary', label: 'Podsumowanie' },
 ]
 
 export function NavBar({ view, onNavigate }: { view: View; onNavigate: (v: View) => void }) {

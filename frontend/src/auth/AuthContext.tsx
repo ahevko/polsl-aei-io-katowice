@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { HttpClient } from '../api/httpClient'
-import { AuthApi, SubscriptionApi } from '../api/services'
+import { AnalyticsApi, AuthApi, SubscriptionApi } from '../api/services'
 import type { Currency, User } from '../types'
 
 const TOKEN_KEY = 'subskrypcje.token'
@@ -28,6 +28,7 @@ function saveToken(token: string | null) {
 export interface Apis {
   auth: AuthApi
   subscriptions: SubscriptionApi
+  analytics: AnalyticsApi
 }
 
 interface AuthState {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       auth: new AuthApi(http),
       subscriptions: new SubscriptionApi(http),
+      analytics: new AnalyticsApi(http),
     }
   }, [token, clearSession])
 

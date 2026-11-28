@@ -4,6 +4,7 @@ import { NavBar } from './components/NavBar'
 import type { View } from './components/NavBar'
 import { LoginPage } from './pages/LoginPage'
 import { SubscriptionsPage } from './pages/SubscriptionsPage'
+import { SummaryPage } from './pages/SummaryPage'
 
 export function App() {
   const { user, ready } = useAuth()
@@ -17,6 +18,7 @@ export function App() {
       <NavBar view={view} onNavigate={setView} />
       <main className="container">
         {view === 'subscriptions' && <SubscriptionsPage />}
+        {view === 'summary' && <SummaryPage />}
       </main>
     </>
   )
