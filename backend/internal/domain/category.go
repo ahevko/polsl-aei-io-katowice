@@ -1,6 +1,6 @@
-﻿package domain
+package domain
 
-// Kategoria wydatku. Kategorie domyślne są słownikiem
+// Category – kategoria wydatku (WF-04). Kategorie domyślne są słownikiem
 // zarządzanym przez administratora.
 type Category struct {
 	ID        string `json:"id"`
@@ -8,7 +8,7 @@ type Category struct {
 	IsDefault bool   `json:"isDefault"`
 }
 
-// Słownik kategorii zgodny ze słownikiem projektu.
+// DefaultCategories – słownik kategorii zgodny ze słownikiem projektu.
 func DefaultCategories() []Category {
 	names := []struct{ id, name string }{
 		{"streaming", "Streaming"},

@@ -1,11 +1,11 @@
-﻿package domain
+package domain
 
 import (
 	"strings"
 	"time"
 )
 
-// Status subskrypcji (słownik: "aktywna" / "wstrzymana").
+// SubscriptionStatus – status subskrypcji (słownik: "aktywna" / "wstrzymana").
 type SubscriptionStatus string
 
 const (
@@ -13,7 +13,7 @@ const (
 	StatusPaused SubscriptionStatus = "PAUSED"
 )
 
-// Główna encja systemu.
+// Subscription – główna encja systemu (WF-01).
 type Subscription struct {
 	ID              string             `json:"id"`
 	UserID          string             `json:"userId"`
@@ -26,7 +26,7 @@ type Subscription struct {
 	CreatedAt       time.Time          `json:"createdAt"`
 }
 
-// Tworzy aktywną subskrypcję i waliduje jej dane.
+// NewSubscription tworzy aktywną subskrypcję i waliduje jej dane.
 func NewSubscription(userID, name string, price Money, cycle BillingCycle, next time.Time, categoryIDs []string, now time.Time) (*Subscription, error) {
 	s := &Subscription{
 		ID:              NewID(),
@@ -45,7 +45,7 @@ func NewSubscription(userID, name string, price Money, cycle BillingCycle, next 
 	return s, nil
 }
 
-// Sprawdza niezmienniki encji.
+// Validate sprawdza niezmienniki encji.
 func (s *Subscription) Validate() error {
 	if s.Name == "" {
 		return invalid("name", "nazwa jest wymagana")
@@ -71,10 +71,10 @@ func (s *Subscription) Validate() error {
 	return nil
 }
 
-// Czy subskrypcja generuje płatności i powiadomienia.
+// IsActive – czy subskrypcja generuje płatności i powiadomienia.
 func (s *Subscription) IsActive() bool { return s.Status == StatusActive }
 
-// Wstrzymuje aktywną subskrypcję.
+// Pause wstrzymuje aktywną subskrypcję (WF-01).
 func (s *Subscription) Pause() error {
 	if s.Status != StatusActive {
 		return ErrInvalidState
@@ -83,7 +83,7 @@ func (s *Subscription) Pause() error {
 	return nil
 }
 
-// Wznawia subskrypcję z nową datą następnej płatności.
+// Resume wznawia subskrypcję z nową datą następnej płatności (WF-01).
 func (s *Subscription) Resume(next time.Time) error {
 	if s.Status != StatusPaused {
 		return ErrInvalidState
@@ -96,12 +96,13 @@ func (s *Subscription) Resume(next time.Time) error {
 	return nil
 }
 
-// Czy w danym dniu przypada (lub minęła) płatność.
+// IsDue – czy w danym dniu przypada (lub minęła) płatność.
 func (s *Subscription) IsDue(day time.Time) bool {
 	return s.IsActive() && !s.NextPaymentDate.After(DateOnly(day))
 }
 
-// Przesuwa datę następnej płatności o jeden cykl.
+// AdvanceBillingDate przesuwa datę następnej płatności o jeden cykl
+// (UC „Wylicz datę następnej płatności”).
 func (s *Subscription) AdvanceBillingDate() error {
 	st, err := StrategyFor(s.Cycle)
 	if err != nil {
@@ -111,7 +112,7 @@ func (s *Subscription) AdvanceBillingDate() error {
 	return nil
 }
 
-// Przesuwa datę z przeszłości na najbliższy termin >= day
+// RollForwardTo przesuwa datę z przeszłości na najbliższy termin >= day
 // bez generowania historii (używane przy dodawaniu/wznawianiu).
 func (s *Subscription) RollForwardTo(day time.Time) error {
 	day = DateOnly(day)
@@ -123,7 +124,7 @@ func (s *Subscription) RollForwardTo(day time.Time) error {
 	return nil
 }
 
-// Koszt znormalizowany do jednego miesiąca.
+// MonthlyCost – koszt znormalizowany do jednego miesiąca.
 func (s *Subscription) MonthlyCost() (Money, error) {
 	st, err := StrategyFor(s.Cycle)
 	if err != nil {
@@ -132,7 +133,7 @@ func (s *Subscription) MonthlyCost() (Money, error) {
 	return s.Price.MulRatio(st.PaymentsPerYear(), 12), nil
 }
 
-// Koszt w skali roku.
+// YearlyCost – koszt w skali roku.
 func (s *Subscription) YearlyCost() (Money, error) {
 	st, err := StrategyFor(s.Cycle)
 	if err != nil {

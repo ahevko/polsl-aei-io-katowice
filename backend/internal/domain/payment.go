@@ -1,10 +1,10 @@
-﻿package domain
+package domain
 
 import (
 	"time"
 )
 
-// Wpis w historii płatności, tworzony przez Workera.
+// Payment – wpis w historii płatności, tworzony przez Workera (WF-06).
 type Payment struct {
 	ID               string    `json:"id"`
 	UserID           string    `json:"userId"`
@@ -15,7 +15,7 @@ type Payment struct {
 	CreatedAt        time.Time `json:"createdAt"`
 }
 
-// Rejestruje płatność za subskrypcję w dniu jej terminu.
+// NewPayment rejestruje płatność za subskrypcję w dniu jej terminu.
 func NewPayment(s *Subscription, now time.Time) *Payment {
 	return &Payment{
 		ID:               NewID(),

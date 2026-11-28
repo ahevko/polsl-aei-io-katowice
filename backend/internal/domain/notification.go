@@ -1,11 +1,11 @@
-﻿package domain
+package domain
 
 import (
 	"fmt"
 	"time"
 )
 
-// Zapis wysłanego przypomnienia (zapobiega duplikatom).
+// Notification – zapis wysłanego przypomnienia (zapobiega duplikatom, WF-02).
 type Notification struct {
 	ID             string    `json:"id"`
 	UserID         string    `json:"userId"`
@@ -16,12 +16,12 @@ type Notification struct {
 	SentAt         time.Time `json:"sentAt"`
 }
 
-// Klucz unikalności przypomnienia.
+// Key – klucz unikalności przypomnienia.
 func (n Notification) Key() string {
 	return NotificationKey(n.SubscriptionID, n.PaymentDate, n.DaysBefore)
 }
 
-// Buduje klucz unikalności bez tworzenia encji.
+// NotificationKey buduje klucz unikalności bez tworzenia encji.
 func NotificationKey(subID string, paymentDate time.Time, daysBefore int) string {
 	return fmt.Sprintf("%s|%s|%d", subID, paymentDate.Format("2006-01-02"), daysBefore)
 }

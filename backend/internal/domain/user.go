@@ -1,4 +1,4 @@
-﻿package domain
+package domain
 
 import (
 	"net/mail"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Rola użytkownika w systemie.
+// Role – rola użytkownika w systemie (aktorzy z diagramu UC).
 type Role string
 
 const (
@@ -14,7 +14,7 @@ const (
 	RoleAdmin Role = "ADMIN"
 )
 
-// Konto użytkownika.
+// User – konto użytkownika (WF-05).
 type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
@@ -24,10 +24,10 @@ type User struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
-// Login porównujemy bez względu na wielkość liter.
+// NormalizeEmail – login porównujemy bez względu na wielkość liter.
 func NormalizeEmail(email string) string { return strings.ToLower(strings.TrimSpace(email)) }
 
-// Sprawdza format adresu e-mail.
+// ValidateEmail sprawdza format adresu e-mail.
 func ValidateEmail(email string) error {
 	addr, err := mail.ParseAddress(email)
 	if err != nil || addr.Address != email || !strings.Contains(email, ".") {
@@ -36,7 +36,7 @@ func ValidateEmail(email string) error {
 	return nil
 }
 
-// Minimalna polityka haseł prototypu.
+// ValidatePassword – minimalna polityka haseł prototypu.
 func ValidatePassword(pw string) error {
 	if len(pw) < 8 {
 		return invalid("password", "hasło musi mieć co najmniej 8 znaków")
@@ -44,7 +44,7 @@ func ValidatePassword(pw string) error {
 	return nil
 }
 
-// Tworzy konto zwykłego użytkownika z walutą bazową PLN.
+// NewUser tworzy konto zwykłego użytkownika z walutą bazową PLN.
 func NewUser(email, passwordHash string, now time.Time) (*User, error) {
 	email = NormalizeEmail(email)
 	if err := ValidateEmail(email); err != nil {
@@ -60,7 +60,7 @@ func NewUser(email, passwordHash string, now time.Time) (*User, error) {
 	}, nil
 }
 
-// Ustawia walutę bazową użytkownika (do konwersji kosztów subskrypcji).
+// ChangeBaseCurrency – UC „Ustaw walutę domyślną”.
 func (u *User) ChangeBaseCurrency(c Currency) error {
 	if !c.IsValid() {
 		return invalid("currency", "nieobsługiwana waluta")

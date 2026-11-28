@@ -1,3 +1,3 @@
 module github.com/ahevko/polsl-aei-io-katowice/backend
 
-go 1.27.3
+go 1.24

@@ -1,11 +1,11 @@
-﻿package domain
+package domain
 
 import (
 	"crypto/rand"
 	"encoding/hex"
 )
 
-// Generuje losowy identyfikator encji.
+// NewID generuje losowy identyfikator encji.
 func NewID() string {
 	b := make([]byte, 8)
 	if _, err := rand.Read(b); err != nil {

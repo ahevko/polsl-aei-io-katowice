@@ -1,10 +1,13 @@
-﻿package domain
+// Package domain zawiera model dziedzinowy systemu (encje, obiekty wartości
+// i reguły biznesowe niezależne od infrastruktury).
+package domain
 
 import (
 	"errors"
 	"fmt"
 )
 
+// Błędy dziedzinowe – warstwa prezentacji mapuje je na kody HTTP.
 var (
 	ErrNotFound     = errors.New("nie znaleziono zasobu")
 	ErrValidation   = errors.New("błąd walidacji")
@@ -13,7 +16,7 @@ var (
 	ErrInvalidState = errors.New("niedozwolona zmiana stanu")
 )
 
-// Opisuje niepoprawną wartość konkretnego pola.
+// ValidationError opisuje niepoprawną wartość konkretnego pola.
 type ValidationError struct {
 	Field   string
 	Message string
@@ -21,7 +24,7 @@ type ValidationError struct {
 
 func (e *ValidationError) Error() string { return fmt.Sprintf("%s: %s", e.Field, e.Message) }
 
-// Pozwala używać errors.Is(err, ErrValidation).
+// Is pozwala używać errors.Is(err, ErrValidation).
 func (e *ValidationError) Is(target error) bool { return target == ErrValidation }
 
 func invalid(field, msg string) error { return &ValidationError{Field: field, Message: msg} }
