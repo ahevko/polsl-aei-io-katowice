@@ -125,6 +125,27 @@ func toSummaryDTO(s *service.CostSummary) summaryDTO {
 	return out
 }
 
+type paymentDTO struct {
+	ID               string   `json:"id"`
+	SubscriptionID   string   `json:"subscriptionId"`
+	SubscriptionName string   `json:"subscriptionName"`
+	Date             string   `json:"date"`
+	Amount           moneyDTO `json:"amount"`
+	Converted        moneyDTO `json:"converted"`
+}
+
+func toPaymentDTO(e service.PaymentEntry) paymentDTO {
+	p := e.Payment
+	return paymentDTO{ID: p.ID, SubscriptionID: p.SubscriptionID, SubscriptionName: p.SubscriptionName,
+		Date: p.Date.Format(dateLayout), Amount: toMoneyDTO(p.Amount), Converted: toMoneyDTO(e.Converted)}
+}
+
+type workerReportDTO struct {
+	Day              string `json:"day"`
+	PaymentsRecorded int    `json:"paymentsRecorded"`
+	RemindersSent    int    `json:"remindersSent"`
+}
+
 type errorDTO struct {
 	Error string `json:"error"`
 	Field string `json:"field,omitempty"`

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/notify"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
@@ -15,6 +16,9 @@ type Dependencies struct {
 	Subscriptions *service.SubscriptionService
 	Categories    *service.CategoryService
 	Analytics     *service.AnalyticsService
+	History       *service.PaymentHistoryService
+	Worker        *service.BillingWorker
+	Email         *notify.EmailSimulator
 	Logger        *log.Logger
 }
 
@@ -22,6 +26,7 @@ type Dependencies struct {
 type Options struct {
 	StaticDir  string // zbudowany frontend (frontend/dist); "" = brak
 	CORSOrigin string // np. http://localhost:5173 dla `npm run dev`
+	EnableDev  bool   // endpointy demonstracyjne /api/dev/*
 }
 
 // NewRouter – FASADA warstwy prezentacji: rejestruje wszystkie trasy REST API
@@ -31,7 +36,7 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 	auth := &AuthHandler{auth: d.Auth}
 	subs := &SubscriptionHandler{subs: d.Subscriptions}
 	cats := &CategoryHandler{categories: d.Categories}
-	an := &AnalyticsHandler{analytics: d.Analytics}
+	an := &AnalyticsHandler{analytics: d.Analytics, history: d.History}
 	u := authMW.RequireUser
 
 	mux := http.NewServeMux()
@@ -58,6 +63,14 @@ func NewRouter(d Dependencies, opt Options) http.Handler {
 
 	// Analiza (diagram „Analiza wydatków i historia płatności”)
 	mux.HandleFunc("GET /api/analytics/summary", u(an.Summary))
+	mux.HandleFunc("GET /api/payments", u(an.Payments))
+	mux.HandleFunc("GET /api/payments/export.csv", u(an.ExportCSV))
+
+	if opt.EnableDev {
+		dev := &DevHandler{worker: d.Worker, email: d.Email}
+		mux.HandleFunc("POST /api/dev/worker/run", u(dev.RunWorker))
+		mux.HandleFunc("GET /api/dev/outbox", u(dev.Outbox))
+	}
 
 	if opt.StaticDir != "" {
 		mux.Handle("/", spaHandler(opt.StaticDir))

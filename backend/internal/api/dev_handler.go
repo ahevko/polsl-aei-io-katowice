@@ -8,8 +8,9 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
 )
 
-// Narzędzia demonstracyjne prototypu: ręczne uruchomienie Workera dla
-// wybranej daty i podgląd skrzynki symulatora e-mail. Wyłączane flagą -dev=false.
+// DevHandler – narzędzia demonstracyjne prototypu: ręczne uruchomienie
+// Workera dla wybranej daty („przesunięcie czasu”) i podgląd skrzynki
+// symulatora e-mail. Wyłączane flagą -dev=false.
 type DevHandler struct {
 	worker *service.BillingWorker
 	email  *notify.EmailSimulator

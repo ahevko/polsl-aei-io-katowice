@@ -17,6 +17,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/api"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/currency"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/domain"
+	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/notify"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository/memory"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/security"
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/service"
@@ -27,7 +28,9 @@ func main() {
 	dataFile := flag.String("data", "data/data.json", "plik danych (pusty = tylko pamięć)")
 	staticDir := flag.String("static", "../frontend/dist", "katalog zbudowanego frontendu")
 	cors := flag.String("cors", "http://localhost:5173", "dozwolony Origin (serwer Vite)")
+	dev := flag.Bool("dev", true, "endpointy demonstracyjne /api/dev/*")
 	seed := flag.Bool("seed", true, "utwórz konto demo@example.com / demo1234")
+	interval := flag.Duration("worker-interval", time.Hour, "co ile uruchamiać Workera")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
@@ -43,8 +46,10 @@ func main() {
 	subsRepo := memory.NewSubscriptionRepository(store)
 	catRepo := memory.NewCategoryRepository(store)
 	payRepo := memory.NewPaymentRepository(store)
+	notifRepo := memory.NewNotificationRepository(store)
 
 	rates := currency.NewCachedRateProvider(currency.NewExchangeAPISimulator(150*time.Millisecond), 30*time.Minute)
+	email := notify.NewEmailSimulator(logger, 200)
 
 	// --- Warstwa logiki biznesowej ---
 	clock := service.SystemClock{}
@@ -53,6 +58,9 @@ func main() {
 	subSvc := service.NewSubscriptionService(subsRepo, catRepo, payRepo, clock)
 	catSvc := service.NewCategoryService(catRepo)
 	analytics := service.NewAnalyticsService(subsRepo, users, catRepo, converter)
+	history := service.NewPaymentHistoryService(payRepo, users, converter)
+	notifSvc := service.NewNotificationService(subsRepo, users, notifRepo, email, []int{3, 1}, clock)
+	worker := service.NewBillingWorker(subsRepo, payRepo, notifSvc, clock, logger)
 
 	if err := catSvc.EnsureDefaults(ctx); err != nil {
 		logger.Fatal(err)
@@ -67,8 +75,11 @@ func main() {
 		staticPath = ""
 	}
 	handler := api.NewRouter(api.Dependencies{
-		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Analytics: analytics, Logger: logger,
-	}, api.Options{StaticDir: staticPath, CORSOrigin: *cors})
+		Auth: authSvc, Subscriptions: subSvc, Categories: catSvc, Analytics: analytics,
+		History: history, Worker: worker, Email: email, Logger: logger,
+	}, api.Options{StaticDir: staticPath, CORSOrigin: *cors, EnableDev: *dev})
+
+	worker.Start(ctx, *interval)
 
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	go func() {

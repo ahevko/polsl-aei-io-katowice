@@ -10,7 +10,7 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository"
 )
 
-// Wysyła przypomnienia o płatnościach.
+// NotificationService – UC „Wyślij przypomnienie o płatności” (WF-02).
 type NotificationService struct {
 	subs          repository.SubscriptionRepository
 	users         repository.UserRepository
@@ -20,7 +20,7 @@ type NotificationService struct {
 	clock         Clock
 }
 
-// Tworzy serwis powiadomień z listą dni przypomnień (np. 3 i 1).
+// NewNotificationService; reminderDays domyślnie {3, 1} zgodnie z WSS.
 func NewNotificationService(subs repository.SubscriptionRepository, users repository.UserRepository, notifications repository.NotificationRepository, notifier notify.Notifier, reminderDays []int, clock Clock) *NotificationService {
 	if len(reminderDays) == 0 {
 		reminderDays = []int{3, 1}
@@ -28,7 +28,7 @@ func NewNotificationService(subs repository.SubscriptionRepository, users reposi
 	return &NotificationService{subs: subs, users: users, notifications: notifications, notifier: notifier, reminderDays: reminderDays, clock: clock}
 }
 
-// Wysyła przypomnienia dla płatności przypadających za N dni.
+// SendReminders wysyła przypomnienia dla płatności przypadających za N dni.
 // Wstrzymane subskrypcje są pomijane; duplikaty blokuje rejestr powiadomień.
 func (s *NotificationService) SendReminders(ctx context.Context, today time.Time) (int, error) {
 	today = domain.DateOnly(today)
@@ -52,7 +52,7 @@ func (s *NotificationService) SendReminders(ctx context.Context, today time.Time
 			}
 			msg := notify.Message{
 				To:      u.Email,
-				Subject: fmt.Sprintf("Przypomnienie: %s - płatność za %d %s", sub.Name, days, dniLabel(days)),
+				Subject: fmt.Sprintf("Przypomnienie: %s – płatność za %d %s", sub.Name, days, dniLabel(days)),
 				Body: fmt.Sprintf("Dnia %s zostanie pobrana opłata %s za subskrypcję „%s”.",
 					sub.NextPaymentDate.Format("02.01.2006"), sub.Price, sub.Name),
 			}
@@ -70,7 +70,6 @@ func (s *NotificationService) SendReminders(ctx context.Context, today time.Time
 	return sent, nil
 }
 
-// Zwraca etykietę liczby dni w języku polskim (1 dzień, 2 dni, 5 dni).
 func dniLabel(n int) string {
 	if n == 1 {
 		return "dzień"

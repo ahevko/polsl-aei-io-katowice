@@ -1,3 +1,4 @@
+// Package notify – integracja z zewnętrznym systemem powiadomień.
 package notify
 
 import (
@@ -7,7 +8,7 @@ import (
 	"time"
 )
 
-// Wiadomość wysyłana do użytkownika.
+// Message – wiadomość wysyłana do użytkownika.
 type Message struct {
 	To      string    `json:"to"`
 	Subject string    `json:"subject"`
@@ -15,14 +16,14 @@ type Message struct {
 	SentAt  time.Time `json:"sentAt"`
 }
 
-// Kontrakt kanału powiadomień.
+// Notifier – kontrakt kanału powiadomień (e-mail, w przyszłości push).
 // Serwisy zależą od interfejsu, więc symulator można zastąpić prawdziwym
 // klientem SMTP bez zmian w logice biznesowej.
 type Notifier interface {
 	Send(ctx context.Context, m Message) error
 }
 
-// SYMULATOR serwisu e-mail: zamiast wysyłać wiadomość,
+// EmailSimulator – SYMULATOR serwisu e-mail: zamiast wysyłać wiadomość,
 // zapisuje ją do logu i do skrzynki nadawczej w pamięci (podgląd w UI).
 type EmailSimulator struct {
 	mu       sync.Mutex
@@ -31,7 +32,7 @@ type EmailSimulator struct {
 	logger   *log.Logger
 }
 
-// Tworzy symulator przechowujący ostatnie capacity wiadomości.
+// NewEmailSimulator tworzy symulator przechowujący ostatnie capacity wiadomości.
 func NewEmailSimulator(logger *log.Logger, capacity int) *EmailSimulator {
 	return &EmailSimulator{logger: logger, capacity: capacity}
 }
@@ -50,7 +51,7 @@ func (e *EmailSimulator) Send(_ context.Context, m Message) error {
 	return nil
 }
 
-// Zwraca kopię wysłanych wiadomości (najnowsze na początku).
+// Outbox zwraca kopię wysłanych wiadomości (najnowsze na początku).
 func (e *EmailSimulator) Outbox() []Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()

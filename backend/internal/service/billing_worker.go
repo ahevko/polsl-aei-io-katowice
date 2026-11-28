@@ -9,14 +9,16 @@ import (
 	"github.com/ahevko/polsl-aei-io-katowice/backend/internal/repository"
 )
 
-// Wynik jednego przebiegu Workera.
+// WorkerReport – wynik jednego przebiegu Workera.
 type WorkerReport struct {
 	Day              time.Time
 	PaymentsRecorded int
 	RemindersSent    int
 }
 
-// Worker rozlicza zaległe płatności i wysyła przypomnienia.
+// BillingWorker – proces w tle (aktor „Czas (harmonogram)”):
+// UC „Rozlicz cykl płatności” (include: Zapisz płatność w historii,
+// Wylicz datę następnej płatności) oraz wyzwolenie przypomnień.
 type BillingWorker struct {
 	subs          repository.SubscriptionRepository
 	payments      repository.PaymentRepository
@@ -29,7 +31,7 @@ func NewBillingWorker(subs repository.SubscriptionRepository, payments repositor
 	return &BillingWorker{subs: subs, payments: payments, notifications: notifications, clock: clock, logger: logger}
 }
 
-// Rozlicza wszystkie zaległe płatności do dnia day włącznie
+// RunOnce rozlicza wszystkie zaległe płatności do dnia day włącznie
 // (również kilka cykli wstecz, jeśli Worker nie działał) i wysyła przypomnienia.
 func (w *BillingWorker) RunOnce(ctx context.Context, day time.Time) (WorkerReport, error) {
 	day = domain.DateOnly(day)
@@ -60,7 +62,7 @@ func (w *BillingWorker) RunOnce(ctx context.Context, day time.Time) (WorkerRepor
 	return rep, nil
 }
 
-// Uruchamia Workera cyklicznie (harmonogram) do czasu anulowania ctx.
+// Start uruchamia Workera cyklicznie (harmonogram) do czasu anulowania ctx.
 func (w *BillingWorker) Start(ctx context.Context, interval time.Duration) {
 	go func() {
 		run := func() {
