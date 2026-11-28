@@ -1,0 +1,142 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "frontend/src  (SPA – React 19 + TypeScript + Vite)" #FFFFFF {
+  package "pages / components" #E0D8FA {
+    class "App" as App <<komponent React>> {
+      -view: View  (useState)
+    }
+    class "NavBar" as NavBar <<komponent React>> {
+      +props: { view, onNavigate }
+    }
+    class "LoginPage" as LoginPage <<komponent React>> {
+      -mode: 'login' | 'register'
+      -email, password, error
+      -submit(e: FormEvent)
+    }
+    class "SubscriptionsPage" as SubscriptionsPage <<komponent React>> {
+      -items: Subscription[]
+      -categories: Category[]
+      -form: FormState
+      -reload()
+      -save(input: SubscriptionInput)
+      -run(action)
+    }
+    class "SummaryPage" as SummaryPage <<komponent React>> {
+      -summary: CostSummary | null
+    }
+    class "HistoryPage" as HistoryPage <<komponent React>> {
+      -items: Payment[] | null
+    }
+    class "SubscriptionForm" as SubscriptionForm <<komponent React>> {
+      +props: { categories, initial?, onSubmit, onCancel }
+      -toggleCategory(id)
+      -submit(e: FormEvent)
+    }
+    class "SubscriptionTable" as SubscriptionTable <<komponent React>> {
+      +props: { items, categories, onEdit, onPause, onResume, onDelete }
+    }
+    class "CategoryBars" as CategoryBars <<komponent React>> {
+      +props: { items: CategoryCost[] }
+    }
+  }
+  package "auth" #E0D8FA {
+    class "AuthProvider" as AuthProvider <<komponent React, Provider>> {
+      -token: string | null  (useState)
+      -user: User | null  (useState)
+      -ready: boolean  (useState)
+      +{static} useAuth(): AuthState
+      -clearSession()
+    }
+    interface "AuthState" as AuthState <<interface, wartość kontekstu>> {
+      +user: User | null
+      +ready: boolean
+      +api: Apis
+      +login(email, password): Promise<void>
+      +register(email, password): Promise<void>
+      +logout(): Promise<void>
+      +setBaseCurrency(c): Promise<void>
+    }
+    interface "Apis" as Apis {
+      +auth: AuthApi
+      +subscriptions: SubscriptionApi
+      +analytics: AnalyticsApi
+    }
+  }
+  package "api" #E0D8FA {
+    class "HttpClient" as HttpClient <<Gateway>> {
+      -baseUrl: string
+      -getToken: () => string | null
+      -onUnauthorized: () => void
+      +request<T>(method, path, body?): Promise<T>
+      +get<T>(path): Promise<T>
+      +post<T>(path, body?): Promise<T>
+      +put<T>(path, body?): Promise<T>
+      +delete(path): Promise<void>
+      +download(path, filename): Promise<void>
+    }
+    class "ApiError" as ApiError {
+      +status: number
+      +field?: string
+    }
+    class "AuthApi" as AuthApi {
+      -http: HttpClient
+      +register(email, password): Promise<User>
+      +login(email, password): Promise<LoginResponse>
+      +logout(): Promise<void>
+      +me(): Promise<User>
+      +setBaseCurrency(c: Currency): Promise<User>
+    }
+    class "SubscriptionApi" as SubscriptionApi {
+      -http: HttpClient
+      +list(): Promise<Subscription[]>
+      +categories(): Promise<Category[]>
+      +create(input: SubscriptionInput): Promise<Subscription>
+      +update(id, input): Promise<Subscription>
+      +remove(id): Promise<void>
+      +pause(id): Promise<Subscription>
+      +resume(id, nextPaymentDate): Promise<Subscription>
+    }
+    class "AnalyticsApi" as AnalyticsApi {
+      -http: HttpClient
+      +summary(): Promise<CostSummary>
+      +payments(): Promise<Payment[]>
+      +exportCsv(): Promise<void>
+    }
+  }
+  package "types.ts" #E0D8FA {
+    class "types.ts" as types <<typy DTO (TS)>> {
+      User, Subscription, SubscriptionInput, Category,
+      Money, CostSummary, CategoryCost, Payment,
+      WorkerReport, EmailMessage, LoginResponse
+      +{static} formatMoney(m: Money): string
+      +{static} formatDate(iso: string): string
+      +{static} todayISO(offsetDays?): string
+    }
+  }
+}
+
+App *-- "1" NavBar
+App *-- "0..1" LoginPage
+App *-- "0..1" SubscriptionsPage
+App *-- "0..1" SummaryPage
+App *-- "0..1" HistoryPage
+SubscriptionsPage *-- "0..1" SubscriptionForm
+SubscriptionsPage *-- "1" SubscriptionTable
+SummaryPage *-- "1" CategoryBars
+AuthProvider ..|> AuthState : value
+AuthProvider *-- "1" Apis : api
+Apis --> AuthApi
+Apis --> SubscriptionApi
+Apis --> AnalyticsApi
+AuthApi o-- "1" HttpClient : http
+SubscriptionApi o-- "1" HttpClient : http
+AnalyticsApi o-- "1" HttpClient : http
+HttpClient ..> ApiError : «throw»
+SubscriptionsPage ..> AuthState : useAuth()
+App ..> AuthState : useAuth()
+
+@enduml

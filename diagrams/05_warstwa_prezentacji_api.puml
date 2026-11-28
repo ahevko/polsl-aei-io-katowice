@@ -1,0 +1,134 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package "internal/api  (Warstwa prezentacji – serwer)" #FFFFFF {
+  class "Dependencies" as Dependencies {
+    +Auth: *AuthService
+    +Subscriptions: *SubscriptionService
+    +Categories: *CategoryService
+    +Analytics: *AnalyticsService
+    +History: *PaymentHistoryService
+    +Worker: *BillingWorker
+    +Email: *EmailSimulator
+    +Logger: *log.Logger
+  }
+  class "Options" as Options {
+    +StaticDir: string
+    +CORSOrigin: string
+    +EnableDev: bool
+  }
+  class "router.go" as router <<utility, Front Controller>> {
+    +{static} NewRouter(d: Dependencies, opt: Options): http.Handler
+    -{static} spaHandler(dir: string): http.Handler
+  }
+  class "middleware.go" as middleware <<utility>> {
+    +{static} Chain(h: http.Handler, mws: ...Middleware): http.Handler
+    +{static} Logging(logger): Middleware
+    +{static} Recover(logger): Middleware
+    +{static} CORS(allowedOrigin: string): Middleware
+    -{static} currentUser(r: *http.Request): *User
+    -{static} bearerToken(r: *http.Request): string
+  }
+  class "Middleware" as Middleware <<typ funkcyjny, Łańcuch zobowiązań>> {
+    func(http.Handler) http.Handler
+  }
+  class "AuthMiddleware" as AuthMiddleware {
+    -auth: *AuthService
+    +RequireUser(next: http.HandlerFunc): http.HandlerFunc
+  }
+  class "statusRecorder" as statusRecorder {
+    -status: int
+    +WriteHeader(code: int)
+  }
+  class "AuthHandler" as AuthHandler <<kontroler>> {
+    -auth: *AuthService
+    +Register(w, r)
+    +Login(w, r)
+    +Logout(w, r)
+    +Me(w, r)
+    +SetCurrency(w, r)
+  }
+  class "SubscriptionHandler" as SubscriptionHandler <<kontroler>> {
+    -subs: *SubscriptionService
+    +List(w, r)
+    +Get(w, r)
+    +Create(w, r)
+    +Update(w, r)
+    +Delete(w, r)
+    +Pause(w, r)
+    +Resume(w, r)
+  }
+  class "CategoryHandler" as CategoryHandler <<kontroler>> {
+    -categories: *CategoryService
+    +List(w, r)
+  }
+  class "AnalyticsHandler" as AnalyticsHandler <<kontroler>> {
+    -analytics: *AnalyticsService
+    -history: *PaymentHistoryService
+    +Summary(w, r)
+    +Payments(w, r)
+    +ExportCSV(w, r)
+  }
+  class "DevHandler" as DevHandler <<kontroler (demo)>> {
+    -worker: *BillingWorker
+    -email: *EmailSimulator
+    +RunWorker(w, r)
+    +Outbox(w, r)
+  }
+  class "respond.go" as respond <<utility>> {
+    -{static} writeJSON(w, status: int, v: any)
+    -{static} writeError(w, err: error)
+    -{static} decodeJSON(r, dst: any): error
+  }
+  class "subscriptionRequest" as subscriptionRequest <<DTO>> {
+    +Name: string
+    +Amount: float64
+    +Currency: string
+    +Cycle: string
+    +NextPaymentDate: string
+    +CategoryIDs: []string
+    -toInput(): (SubscriptionInput, error)
+  }
+  class "subscriptionDTO" as subscriptionDTO <<DTO>> {
+    +ID: string
+    +Name: string
+    +Price: moneyDTO
+    +MonthlyCost: moneyDTO
+    +Cycle: string
+    +NextPaymentDate: string
+    +CategoryIDs: []string
+    +Status: string
+  }
+  class "moneyDTO" as moneyDTO <<DTO>> {
+    +Amount: float64
+    +Currency: string
+  }
+  class "dto.go – pozostałe DTO" as dto_other <<DTO>> {
+    credentialsRequest, currencyRequest, resumeRequest
+    userDTO, loginResponse, summaryDTO, categoryCostDTO
+    paymentDTO, workerReportDTO, errorDTO
+    -{static} toUserDTO / toSubscriptionDTO / toSummaryDTO / toPaymentDTO(…)
+  }
+}
+
+router ..> Dependencies : «use»
+router ..> Options : «use»
+router ..> AuthHandler : «create»
+router ..> SubscriptionHandler : «create»
+router ..> CategoryHandler : «create»
+router ..> AnalyticsHandler : «create»
+router ..> DevHandler : «create»
+router ..> AuthMiddleware : «create»
+router ..> middleware : «use» Chain
+middleware ..> Middleware : «create»
+middleware ..> statusRecorder : «use»
+SubscriptionHandler ..> subscriptionRequest : «use»
+SubscriptionHandler ..> subscriptionDTO : «create»
+subscriptionDTO *-- "2" moneyDTO : Price, MonthlyCost
+SubscriptionHandler ..> respond : «use»
+AuthHandler ..> dto_other : «use»
+
+@enduml
